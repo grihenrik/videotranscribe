@@ -1,0 +1,39 @@
+You are an expert Python backend engineer. Using the latest FastAPI documentation and following RFC-compliant HTTP semantics, Clean Code principles and Pydantic schemas, generate a complete Replit project that implements a YouTube transcription server with these features:
+
+1. **Architecture & Dependencies**  
+   - **FastAPI** for the web server  
+   - **yt-dlp** (or youtube-dl) for metadata and caption download  
+   - **xml.etree.ElementTree** (or equivalent) for parsing XML captions  
+   - **OpenAI Whisper** (via `whisper` or `openai` Python SDK) for speech-to-text fallback  
+   - **asyncio** for handling concurrent requests and **threading** where blocking is unavoidable  
+   - **WebSockets** endpoint for real-time progress updates  
+   - **Redis** (or in-memory cache) for caching completed transcriptions  
+   - Optional: GPU acceleration config for Whisper  
+
+2. **Endpoints & Behavior**  
+   - `POST /transcribe`  
+     - Accept JSON `{ "url": "<YouTube URL>", "mode": "auto"|"captions"|"whisper", "lang": "<ISO639-1>" }`  
+     - Validate URL and extract video ID  
+     - If `mode=="captions"`, download the first caption track; if none, return 404  
+     - If `mode=="whisper"`, download audio, run through Whisper, support CPU/GPU  
+     - If `mode=="auto"`, try captions first then fallback to Whisper  
+     - Clean the output into plain text, and also generate optional SRT/VTT with timestamps  
+     - Save result to cache keyed by `<video_id>+mode+lang>` and return a download link  
+
+   - `GET /download/{job_id}`  
+     - Serve the `.txt` or `.srt` file  
+
+   - `WebSocket /ws/progress/{job_id}`  
+     - Stream JSON updates: `{ "status": "downloading"|"transcribing"|"complete", "percent": 0–100 }`  
+
+3. **Implementation Details**  
+   - Use **Pydantic** models for request/response bodies  
+   - Adhere to **HTTP/1.1** RFC standards: proper status codes, headers, caching directives  
+   - Organize code with routers, services, and utils modules  
+   - Use **async def** everywhere; offload blocking `yt-dlp` or Whisper CPU work to a threadpool executor  
+   - Provide **OpenAPI** docs at `/docs` and `/redoc` automatically  
+   - Write a **Dockerfile** and **requirements.txt**  
+   - Include basic **unit tests** for URL validation, caption parsing, and Whisper fallback  
+   - Follow Clean Code: meaningful naming, single-responsibility functions, docstrings, logging  
+
+4. **Project Structure**  
