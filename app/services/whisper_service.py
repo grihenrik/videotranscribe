@@ -1,232 +1,266 @@
+"""
+Simple Whisper service implementation using OpenAI's API.
+"""
 import os
-import asyncio
-import logging
+import json
 import tempfile
-from typing import Dict, Optional, Any
+import subprocess
+from openai import OpenAI
 
-from app.core.config import settings
+# Initialize OpenAI client
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-logger = logging.getLogger(__name__)
-
-
-class WhisperService:
-    """Service for speech-to-text using OpenAI's Whisper."""
+def transcribe_audio_file(file_path, language=None):
+    """
+    Transcribe an audio file using OpenAI's Whisper API.
     
-    def __init__(self):
-        """Initialize the Whisper service."""
-        self.model_name = settings.WHISPER_MODEL
-        self.use_openai = settings.USE_OPENAI_WHISPER
-        self.use_gpu = settings.USE_GPU
+    Args:
+        file_path (str): Path to the audio file
+        language (str, optional): Language code (ISO 639-1)
         
-        # Load whisper lazily to improve startup time
-        self._whisper = None
-        self._openai = None
-    
-    async def _load_whisper(self):
-        """
-        Load the Whisper model.
-        """
-        if self.use_openai:
-            # Load OpenAI client
-            if self._openai is None:
-                import openai
-                
-                openai.api_key = settings.OPENAI_API_KEY
-                self._openai = openai
-        else:
-            # Load local Whisper model
-            if self._whisper is None:
-                try:
-                    import whisper
-                    import torch
-                    
-                    # Determine device
-                    device = "cuda" if self.use_gpu and torch.cuda.is_available() else "cpu"
-                    logger.info(f"Using Whisper on {device} device")
-                    
-                    # Load model
-                    self._whisper = whisper.load_model(self.model_name, device=device)
-                    
-                except ImportError:
-                    logger.error("Failed to import whisper or torch. Please make sure they are installed.")
-                    raise ValueError("Whisper dependencies are not installed")
-    
-    async def transcribe_audio(self, audio_path: str, language: Optional[str] = None) -> Dict[str, str]:
-        """
-        Transcribe audio using Whisper.
-        
-        Args:
-            audio_path: Path to audio file
-            language: Language code (optional)
-            
-        Returns:
-            Dictionary with transcription in different formats (text, srt, vtt)
-        """
-        if not os.path.exists(audio_path):
-            raise FileNotFoundError(f"Audio file not found: {audio_path}")
-        
-        loop = asyncio.get_event_loop()
-        
-        if self.use_openai:
-            return await self._transcribe_with_openai(audio_path, language)
-        else:
-            return await self._transcribe_with_local_whisper(audio_path, loop, language)
-    
-    async def _transcribe_with_openai(self, audio_path: str, language: Optional[str] = None) -> Dict[str, str]:
-        """
-        Transcribe audio using OpenAI's Whisper API.
-        
-        Args:
-            audio_path: Path to audio file
-            language: Language code (optional)
-            
-        Returns:
-            Dictionary with transcription in different formats (text, srt, vtt)
-        """
-        logger.info(f"Transcribing audio with OpenAI Whisper API: {audio_path}")
-        
-        # Load OpenAI client
-        await self._load_whisper()
-        
-        if not settings.OPENAI_API_KEY:
-            raise ValueError("OpenAI API key is not set")
-        
-        loop = asyncio.get_event_loop()
-        
-        def _transcribe():
-            with open(audio_path, "rb") as audio_file:
-                # For local testing, could use the OpenAI Whisper API
-                # This will require the OpenAI API key
-                # In a production environment, you would want to handle rate limiting
-                # and errors appropriately
-                from openai import OpenAI
-                
-                client = OpenAI(api_key=settings.OPENAI_API_KEY)
-                
-                options = {}
-                if language:
-                    options["language"] = language
-                
-                # Define response formats based on required output
-                result = {}
-                
-                # Get text transcription
-                response = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file,
-                    **options
-                )
-                result["text"] = response.text
-                
-                # Reset file pointer for next read
-                audio_file.seek(0)
-                
-                # Get SRT format
-                response_srt = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file,
-                    response_format="srt",
-                    **options
-                )
-                result["srt"] = response_srt
-                
-                # Reset file pointer for next read
-                audio_file.seek(0)
-                
-                # Get VTT format
-                response_vtt = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file,
-                    response_format="vtt",
-                    **options
-                )
-                result["vtt"] = response_vtt
-                
-                return result
-        
-        # Run OpenAI API in a thread pool executor to avoid blocking
-        result = await loop.run_in_executor(None, _transcribe)
-        
-        return result
-    
-    async def _transcribe_with_local_whisper(self, audio_path: str, loop: asyncio.AbstractEventLoop, language: Optional[str] = None) -> Dict[str, str]:
-        """
-        Transcribe audio using local Whisper model.
-        
-        Args:
-            audio_path: Path to audio file
-            loop: Asyncio event loop
-            language: Language code (optional)
-            
-        Returns:
-            Dictionary with transcription in different formats (text, srt, vtt)
-        """
-        logger.info(f"Transcribing audio with local Whisper model: {audio_path}")
-        
-        # Load Whisper model
-        await self._load_whisper()
-        
-        def _transcribe():
-            # Transcribe with options
-            options = {}
-            if language:
-                options["language"] = language
-            
-            result = self._whisper.transcribe(audio_path, **options)
-            
-            # Extract text from result
-            text = result["text"]
-            
-            # Create SRT and VTT files using the segments
-            # Create temporary files for SRT and VTT output
-            with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".srt") as srt_file, \
-                 tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".vtt") as vtt_file:
-                
-                # Write SRT format
-                for i, segment in enumerate(result["segments"], 1):
-                    start = int(segment["start"] * 1000)
-                    end = int(segment["end"] * 1000)
-                    
-                    # Format SRT timestamps
-                    start_str = f"{start//3600000:02d}:{(start//60000)%60:02d}:{(start//1000)%60:02d},{start%1000:03d}"
-                    end_str = f"{end//3600000:02d}:{(end//60000)%60:02d}:{(end//1000)%60:02d},{end%1000:03d}"
-                    
-                    # Write SRT entry
-                    srt_file.write(f"{i}\n")
-                    srt_file.write(f"{start_str} --> {end_str}\n")
-                    srt_file.write(f"{segment['text'].strip()}\n\n")
-                
-                # Write VTT format
-                vtt_file.write("WEBVTT\n\n")
-                for i, segment in enumerate(result["segments"]):
-                    start = int(segment["start"] * 1000)
-                    end = int(segment["end"] * 1000)
-                    
-                    # Format VTT timestamps
-                    start_str = f"{start//3600000:02d}:{(start//60000)%60:02d}:{(start//1000)%60:02d}.{start%1000:03d}"
-                    end_str = f"{end//3600000:02d}:{(end//60000)%60:02d}:{(end//1000)%60:02d}.{end%1000:03d}"
-                    
-                    # Write VTT entry
-                    vtt_file.write(f"{start_str} --> {end_str}\n")
-                    vtt_file.write(f"{segment['text'].strip()}\n\n")
-            
-            # Read back the files
-            with open(srt_file.name, "r") as f:
-                srt_content = f.read()
-            with open(vtt_file.name, "r") as f:
-                vtt_content = f.read()
-            
-            # Clean up temporary files
-            os.unlink(srt_file.name)
-            os.unlink(vtt_file.name)
-            
-            return {
-                "text": text,
-                "srt": srt_content,
-                "vtt": vtt_content
+    Returns:
+        dict: Transcription in multiple formats (text, srt, vtt)
+    """
+    try:
+        # Open the audio file
+        with open(file_path, "rb") as audio_file:
+            # Call OpenAI's Whisper API
+            transcription_args = {
+                "model": "whisper-1",
+                "file": audio_file
             }
+            
+            # Only add language parameter if it's provided and not None
+            if language:
+                transcription_args["language"] = language
+                
+            response = client.audio.transcriptions.create(**transcription_args)
         
-        # Run Whisper in a thread pool executor to avoid blocking
-        result = await loop.run_in_executor(None, _transcribe)
+        # Get the transcription text
+        transcription_text = response.text
         
-        return result
+        # Convert to SRT and VTT formats
+        srt_content = convert_to_srt(transcription_text)
+        vtt_content = convert_to_vtt(transcription_text)
+        
+        return {
+            "text": transcription_text,
+            "srt": srt_content,
+            "vtt": vtt_content
+        }
+    except Exception as e:
+        print(f"Error transcribing audio: {e}")
+        return None
+
+def download_audio_from_youtube(url, output_path=None):
+    """
+    Download audio from a YouTube video using yt-dlp.
+    
+    Args:
+        url (str): YouTube URL
+        output_path (str, optional): Output directory
+        
+    Returns:
+        str: Path to downloaded audio file
+    """
+    try:
+        # Create a temporary directory if no output path provided
+        if output_path is None:
+            output_dir = tempfile.mkdtemp()
+        else:
+            output_dir = output_path
+            
+        # Prepare the output template
+        output_template = os.path.join(output_dir, "%(id)s.%(ext)s")
+        
+        # Set up yt-dlp options for audio extraction
+        cmd = [
+            "yt-dlp",
+            "--extract-audio",
+            "--audio-format", "mp3",
+            "--audio-quality", "0",  # Best quality
+            "--output", output_template,
+            "--no-playlist",
+            url
+        ]
+        
+        # Run the command
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            raise Exception(f"yt-dlp failed: {result.stderr}")
+        
+        # Find the downloaded file
+        for file in os.listdir(output_dir):
+            if file.endswith(".mp3"):
+                return os.path.join(output_dir, file)
+        
+        raise Exception("No audio file found after download")
+    except Exception as e:
+        print(f"Error downloading audio: {e}")
+        return None
+        
+def extract_videos_from_playlist(playlist_url):
+    """
+    Extract video URLs and titles from a YouTube playlist.
+    
+    Args:
+        playlist_url (str): YouTube playlist URL
+        
+    Returns:
+        dict: Dictionary with playlist info, video URLs and titles
+    """
+    try:
+        # Create a temporary directory
+        temp_dir = tempfile.mkdtemp()
+            
+        # First get the playlist title
+        title_cmd = [
+            "yt-dlp",
+            "--flat-playlist",
+            "--print", "%(playlist_title)s",
+            "--playlist-items", "1",
+            playlist_url
+        ]
+        
+        title_result = subprocess.run(title_cmd, capture_output=True, text=True)
+        playlist_title = title_result.stdout.strip() or "YouTube Playlist"
+        
+        # Get video IDs, titles, and URLs
+        info_cmd = [
+            "yt-dlp",
+            "--flat-playlist",
+            "--print", "%(id)s:%(title)s",
+            playlist_url
+        ]
+        
+        info_result = subprocess.run(info_cmd, capture_output=True, text=True)
+        
+        if info_result.returncode != 0:
+            raise Exception(f"yt-dlp failed: {info_result.stderr}")
+        
+        # Parse the output to get video IDs and titles
+        videos = []
+        video_lines = info_result.stdout.strip().split('\n')
+        
+        for line in video_lines:
+            if ':' in line:
+                parts = line.split(':', 1)  # Split only on first colon
+                video_id = parts[0].strip()
+                video_title = parts[1].strip()
+                
+                if video_id:
+                    videos.append({
+                        "id": video_id,
+                        "title": video_title,
+                        "url": f"https://www.youtube.com/watch?v={video_id}"
+                    })
+        
+        return {
+            "title": playlist_title,
+            "videos": videos,
+            "count": len(videos)
+        }
+    except Exception as e:
+        print(f"Error extracting playlist videos: {e}")
+        return {
+            "title": "YouTube Playlist",
+            "videos": [],
+            "count": 0
+        }
+
+def convert_to_srt(text, chunk_duration=5):
+    """
+    Convert plain text to SRT format.
+    
+    Args:
+        text (str): Plain text transcription
+        chunk_duration (int): Duration of each subtitle chunk in seconds
+        
+    Returns:
+        str: SRT formatted text
+    """
+    # Split text into chunks (simple implementation)
+    words = text.split()
+    chunks = []
+    current_chunk = []
+    
+    for word in words:
+        current_chunk.append(word)
+        if len(current_chunk) >= 10:  # ~10 words per chunk
+            chunks.append(" ".join(current_chunk))
+            current_chunk = []
+    
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
+    
+    # Generate SRT
+    srt = ""
+    for i, chunk in enumerate(chunks):
+        start_time = i * chunk_duration
+        end_time = (i + 1) * chunk_duration
+        
+        # Format start and end times (HH:MM:SS,mmm)
+        start_formatted = format_time_srt(start_time)
+        end_formatted = format_time_srt(end_time)
+        
+        srt += f"{i + 1}\n{start_formatted} --> {end_formatted}\n{chunk}\n\n"
+    
+    return srt
+
+def convert_to_vtt(text, chunk_duration=5):
+    """
+    Convert plain text to WebVTT format.
+    
+    Args:
+        text (str): Plain text transcription
+        chunk_duration (int): Duration of each subtitle chunk in seconds
+        
+    Returns:
+        str: WebVTT formatted text
+    """
+    # Start with WebVTT header
+    vtt = "WEBVTT\n\n"
+    
+    # Split text into chunks (simple implementation)
+    words = text.split()
+    chunks = []
+    current_chunk = []
+    
+    for word in words:
+        current_chunk.append(word)
+        if len(current_chunk) >= 10:  # ~10 words per chunk
+            chunks.append(" ".join(current_chunk))
+            current_chunk = []
+    
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
+    
+    # Generate VTT cues
+    for i, chunk in enumerate(chunks):
+        start_time = i * chunk_duration
+        end_time = (i + 1) * chunk_duration
+        
+        # Format start and end times (HH:MM:SS.mmm)
+        start_formatted = format_time_vtt(start_time)
+        end_formatted = format_time_vtt(end_time)
+        
+        vtt += f"{start_formatted} --> {end_formatted}\n{chunk}\n\n"
+    
+    return vtt
+
+def format_time_srt(seconds):
+    """Format seconds to SRT timestamp (HH:MM:SS,mmm)"""
+    hours = int(seconds / 3600)
+    minutes = int((seconds % 3600) / 60)
+    seconds = int(seconds % 60)
+    milliseconds = int((seconds - int(seconds)) * 1000)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds:03d}"
+
+def format_time_vtt(seconds):
+    """Format seconds to WebVTT timestamp (HH:MM:SS.mmm)"""
+    hours = int(seconds / 3600)
+    minutes = int((seconds % 3600) / 60)
+    seconds = int(seconds % 60)
+    milliseconds = int((seconds - int(seconds)) * 1000)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
