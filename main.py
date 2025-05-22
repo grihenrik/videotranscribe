@@ -55,6 +55,11 @@ def batch():
     """Serve the batch processing HTML page"""
     return send_from_directory('static', 'batch.html')
 
+@app.route('/playlist.html')
+def playlist():
+    """Serve the playlist processing HTML page"""
+    return send_from_directory('static', 'playlist.html')
+
 @app.route('/css/<path:path>')
 def serve_css(path):
     """Serve CSS files"""
@@ -428,6 +433,38 @@ def download(job_id):
     else:
         return jsonify({"error": "Invalid format"}), 400
 
+# Playlist processing endpoint
+@app.route('/api/playlist/videos', methods=['POST'])
+def extract_playlist_videos():
+    """API endpoint to extract videos from a YouTube playlist"""
+    data = request.json
+    logger.info(f"Playlist extraction request received: {data}")
+    
+    # Get playlist URL
+    playlist_url = data.get("playlist_url", "")
+    
+    if not playlist_url:
+        return jsonify({"error": "No playlist URL provided"}), 400
+    
+    # Extract videos from playlist
+    try:
+        videos = whisper_service.extract_videos_from_playlist(playlist_url)
+        
+        if not videos:
+            return jsonify({"error": "No videos found in playlist or playlist is private"}), 400
+        
+        # Get playlist title from the first video
+        playlist_title = f"YouTube Playlist ({len(videos)} videos)"
+        
+        return jsonify({
+            "title": playlist_title,
+            "videos": videos,
+            "count": len(videos)
+        })
+    except Exception as e:
+        logger.error(f"Error extracting playlist videos: {e}")
+        return jsonify({"error": str(e)}), 500
+
 # Clean up old jobs (would be a scheduled task in production)
 def cleanup_old_jobs():
     """Clean up old jobs and transcriptions"""
@@ -441,6 +478,13 @@ def cleanup_old_jobs():
                 del job_statuses[job_id]
             if job_id in transcriptions:
                 del transcriptions[job_id]
+                
+    # Also clean up old batches
+    for batch_id in list(batch_jobs.keys()):
+        if "created_at" in batch_jobs[batch_id]:
+            batch_time = batch_jobs[batch_id]["created_at"]
+            if batch_time < cutoff_time:
+                del batch_jobs[batch_id]
 
 # This is the app that Gunicorn will use
 application = app

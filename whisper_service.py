@@ -99,6 +99,43 @@ def download_audio_from_youtube(url, output_path=None):
     except Exception as e:
         print(f"Error downloading audio: {e}")
         return None
+        
+def extract_videos_from_playlist(playlist_url):
+    """
+    Extract video URLs from a YouTube playlist.
+    
+    Args:
+        playlist_url (str): YouTube playlist URL
+        
+    Returns:
+        list: List of video URLs in the playlist
+    """
+    try:
+        # Create a temporary directory
+        temp_dir = tempfile.mkdtemp()
+            
+        # Set up yt-dlp options to get playlist info
+        cmd = [
+            "yt-dlp",
+            "--flat-playlist",
+            "--get-id",
+            playlist_url
+        ]
+        
+        # Run the command
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            raise Exception(f"yt-dlp failed: {result.stderr}")
+        
+        # Extract video IDs and convert to URLs
+        video_ids = result.stdout.strip().split('\n')
+        video_urls = [f"https://www.youtube.com/watch?v={video_id}" for video_id in video_ids if video_id]
+        
+        return video_urls
+    except Exception as e:
+        print(f"Error extracting playlist videos: {e}")
+        return []
 
 def convert_to_srt(text, chunk_duration=5):
     """
