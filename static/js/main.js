@@ -58,7 +58,13 @@ function initTranscriptionForm() {
             
             // Show results container
             resultsContainer.classList.remove('d-none');
-            videoIdElement.textContent = data.video_id;
+            
+            // Display video title if available, otherwise ID
+            if (data.video_title) {
+                videoIdElement.textContent = data.video_title;
+            } else {
+                videoIdElement.textContent = data.video_id;
+            }
             
             // Update download links
             downloadTxt.href = data.download_links.txt;
