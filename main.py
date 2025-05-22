@@ -7,6 +7,7 @@ import threading
 import tempfile
 import shutil
 import queue
+import subprocess
 from werkzeug.serving import run_simple
 
 # Import our Whisper service
@@ -124,10 +125,29 @@ def transcribe():
     # Extract video ID from URL
     url = data.get("url", "")
     video_id = "demo"
+    video_title = "YouTube Video"
+    
     if "v=" in url:
         video_id = url.split("v=")[-1].split("&")[0]
     elif "youtu.be/" in url:
         video_id = url.split("youtu.be/")[-1].split("?")[0]
+    
+    # Try to get the video title
+    try:
+        # Use yt-dlp to get the video title
+        cmd = [
+            "yt-dlp",
+            "--skip-download",
+            "--print", "%(title)s",
+            url
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0 and result.stdout.strip():
+            video_title = result.stdout.strip()
+    except Exception as e:
+        logger.error(f"Error getting video title: {e}")
+        # Fall back to video ID if we can't get the title
+        video_title = f"Video {video_id}"
     
     # Get transcription mode and language
     mode = data.get("mode", "auto")
@@ -138,6 +158,7 @@ def transcribe():
         "status": "queued",
         "percent": 5,
         "video_id": video_id,
+        "video_title": video_title,
         "mode": mode,
         "lang": lang,
         "queued_at": time.time()
@@ -163,6 +184,7 @@ def transcribe():
         "job_id": job_id,
         "status": "queued",
         "video_id": video_id,
+        "video_title": video_title,
         "message": "Transcription queued",
         "download_links": {
             "txt": f"/api/download/{job_id}?format=txt",
@@ -419,24 +441,34 @@ def download(job_id):
     format_type = request.args.get('format', 'txt')
     data = transcriptions[job_id]
     
+    # Get video title for filename (use safe filename)
+    if "video_title" in status:
+        # Remove any characters that would be problematic in filenames
+        safe_title = ''.join(c for c in status["video_title"] if c.isalnum() or c in ' -_')
+        safe_title = safe_title.strip().replace(' ', '_')[:50]  # Limit length
+        if not safe_title:  # If nothing is left after sanitizing
+            safe_title = f"video_{status['video_id']}"
+    else:
+        safe_title = f"video_{status['video_id']}"
+    
     # Return appropriate format
     if format_type == 'txt':
         return Response(
             data["text"],
             mimetype="text/plain",
-            headers={"Content-Disposition": f"attachment;filename={status['video_id']}.txt"}
+            headers={"Content-Disposition": f"attachment;filename={safe_title}.txt"}
         )
     elif format_type == 'srt':
         return Response(
             data["srt"],
             mimetype="text/plain",
-            headers={"Content-Disposition": f"attachment;filename={status['video_id']}.srt"}
+            headers={"Content-Disposition": f"attachment;filename={safe_title}.srt"}
         )
     elif format_type == 'vtt':
         return Response(
             data["vtt"],
             mimetype="text/plain",
-            headers={"Content-Disposition": f"attachment;filename={status['video_id']}.vtt"}
+            headers={"Content-Disposition": f"attachment;filename={safe_title}.vtt"}
         )
     else:
         return jsonify({"error": "Invalid format"}), 400
