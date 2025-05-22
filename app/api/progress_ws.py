@@ -1,18 +1,19 @@
-import asyncio
-import json
+"""
+WebSocket API for real-time progress updates.
+
+This module handles the WebSocket connections for providing real-time
+progress updates for transcription jobs.
+"""
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from typing import Dict, Any, Set, List
 import logging
-from typing import Dict, Any
-
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
-
-from app.api.transcribe import job_statuses
+import json
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# Store active connections
-active_connections: Dict[str, WebSocket] = {}
-
+# Dictionary to store active WebSocket connections
+active_connections: Dict[str, Set[WebSocket]] = {}
 
 @router.websocket("/ws/progress/{job_id}")
 async def websocket_endpoint(websocket: WebSocket, job_id: str):
@@ -23,61 +24,41 @@ async def websocket_endpoint(websocket: WebSocket, job_id: str):
         websocket: WebSocket connection
         job_id: Unique job identifier
     """
-    # Accept connection
     await websocket.accept()
     
+    # Add connection to active connections
+    if job_id not in active_connections:
+        active_connections[job_id] = set()
+    active_connections[job_id].add(websocket)
+    
     try:
-        # Check if job exists
-        if job_id not in job_statuses:
-            await websocket.send_json({"error": "Job not found"})
-            await websocket.close(code=1000)
-            return
+        # Import here to avoid circular imports
+        from app.api.transcribe import job_statuses
         
-        # Add to active connections
-        active_connections[job_id] = websocket
+        # Send initial status if available
+        if job_id in job_statuses:
+            await send_status_update(websocket, job_statuses[job_id])
         
-        # Send initial status
-        await send_status_update(websocket, job_statuses[job_id])
-        
-        # Keep connection alive and send updates
+        # Wait for disconnect
         while True:
-            # Check if job is still running
-            if job_id not in job_statuses:
-                await websocket.send_json({"error": "Job no longer exists"})
-                break
+            # Keep connection alive and handle any incoming messages
+            data = await websocket.receive_text()
+            # Simply echo back any messages received (not used in current implementation)
+            await websocket.send_text(data)
             
-            # Get current status
-            current_status = job_statuses[job_id]
-            
-            # Send update
-            await send_status_update(websocket, current_status)
-            
-            # If job is complete or has error, break loop
-            if current_status["status"] in ["complete", "error"]:
-                break
-            
-            # Wait before next update
-            await asyncio.sleep(1)
-        
     except WebSocketDisconnect:
-        logger.info(f"WebSocket client disconnected: {job_id}")
-    except Exception as e:
-        logger.error(f"WebSocket error: {str(e)}")
-        try:
-            await websocket.send_json({"error": str(e)})
-        except:
-            pass
-    finally:
-        # Remove from active connections
+        # Remove connection from active connections
         if job_id in active_connections:
-            del active_connections[job_id]
-        
-        # Close connection
-        try:
-            await websocket.close()
-        except:
-            pass
-
+            active_connections[job_id].discard(websocket)
+            if not active_connections[job_id]:
+                del active_connections[job_id]
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+        # Remove connection from active connections
+        if job_id in active_connections:
+            active_connections[job_id].discard(websocket)
+            if not active_connections[job_id]:
+                del active_connections[job_id]
 
 async def send_status_update(websocket: WebSocket, status_data: Dict[str, Any]):
     """
@@ -88,15 +69,15 @@ async def send_status_update(websocket: WebSocket, status_data: Dict[str, Any]):
         status_data: Status data to send
     """
     try:
-        await websocket.send_json({
-            "status": status_data["status"],
-            "percent": status_data["percent"],
-            "error": status_data.get("error")
-        })
+        # Create a copy of the status data and remove any file paths
+        # to avoid sending sensitive data to clients
+        status_copy = status_data.copy()
+        if "files" in status_copy:
+            del status_copy["files"]
+        
+        await websocket.send_json(status_copy)
     except Exception as e:
-        logger.error(f"Error sending status update: {str(e)}")
-        raise
-
+        logger.error(f"Error sending status update: {e}")
 
 async def broadcast_status_update(job_id: str, status_data: Dict[str, Any]):
     """
@@ -106,8 +87,21 @@ async def broadcast_status_update(job_id: str, status_data: Dict[str, Any]):
         job_id: Unique job identifier
         status_data: Status data to send
     """
-    if job_id in active_connections:
+    if job_id not in active_connections:
+        return
+    
+    # Get all WebSocket connections for the job
+    connections = active_connections[job_id].copy()
+    
+    # Send update to all connections
+    for connection in connections:
         try:
-            await send_status_update(active_connections[job_id], status_data)
+            await send_status_update(connection, status_data)
         except Exception as e:
-            logger.error(f"Error broadcasting status update: {str(e)}")
+            logger.error(f"Error broadcasting status update: {e}")
+            # Remove connection if it's closed or has an error
+            active_connections[job_id].discard(connection)
+    
+    # Clean up if no connections remain
+    if not active_connections[job_id]:
+        del active_connections[job_id]
