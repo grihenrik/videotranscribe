@@ -199,6 +199,14 @@ function initBatchForm() {
                     continue;
                 }
                 
+                // Update job title with video title if available
+                if (data.video_title) {
+                    const jobTitle = jobElement.querySelector('.job-title');
+                    if (jobTitle) {
+                        jobTitle.textContent = data.video_title;
+                    }
+                }
+                
                 const jobStatus = jobElement.querySelector('.badge');
                 let statusColor = 'bg-secondary';
                 
