@@ -8,6 +8,8 @@ import tempfile
 import shutil
 import queue
 import subprocess
+import zipfile
+import io
 from werkzeug.serving import run_simple
 
 # Import our Whisper service
@@ -493,6 +495,60 @@ def download(job_id):
         )
     else:
         return jsonify({"error": "Invalid format"}), 400
+
+# Batch ZIP download endpoint
+@app.route('/api/batch/<batch_id>/download')
+def download_batch_zip(batch_id):
+    """Download all transcriptions for a batch as a ZIP file"""
+    if batch_id not in batch_jobs:
+        return jsonify({"error": "Batch not found"}), 404
+    
+    # Get batch information
+    batch = batch_jobs[batch_id]
+    
+    # Check if this batch has a playlist title
+    batch_title = batch.get("playlist_title", f"batch_{batch_id}")
+    
+    # Create an in-memory ZIP file
+    memory_file = io.BytesIO()
+    with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+        # Add each job's transcriptions to the ZIP
+        for job_id in batch["job_ids"]:
+            if job_id in job_statuses and job_statuses[job_id]["status"] == "complete" and job_id in transcriptions:
+                # Get job status and transcription data
+                status = job_statuses[job_id]
+                data = transcriptions[job_id]
+                
+                # Create safe filename from video title or ID
+                if "video_title" in status:
+                    # Remove any characters that would be problematic in filenames
+                    safe_title = ''.join(c for c in status["video_title"] if c.isalnum() or c in ' -_')
+                    safe_title = safe_title.strip().replace(' ', '_')[:50]  # Limit length
+                    if not safe_title:  # If nothing is left after sanitizing
+                        safe_title = f"video_{status['video_id']}"
+                else:
+                    safe_title = f"video_{status['video_id']}"
+                
+                # Add each format to the ZIP
+                zf.writestr(f"{safe_title}.txt", data["text"])
+                zf.writestr(f"{safe_title}.srt", data["srt"])
+                zf.writestr(f"{safe_title}.vtt", data["vtt"])
+    
+    # Seek to the beginning of the file
+    memory_file.seek(0)
+    
+    # Create a sanitized batch/playlist title for the filename
+    safe_batch_title = ''.join(c for c in batch_title if c.isalnum() or c in ' -_')
+    safe_batch_title = safe_batch_title.strip().replace(' ', '_')[:50]
+    if not safe_batch_title:
+        safe_batch_title = f"batch_{batch_id}"
+    
+    # Return the ZIP file
+    return Response(
+        memory_file.getvalue(),
+        mimetype="application/zip",
+        headers={"Content-Disposition": f"attachment;filename={safe_batch_title}_transcriptions.zip"}
+    )
 
 # Playlist processing endpoint
 @app.route('/api/playlist/videos', methods=['POST'])
