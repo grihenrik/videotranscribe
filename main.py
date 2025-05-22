@@ -29,6 +29,14 @@ MAX_CONCURRENT_JOBS = 2  # Limit concurrent jobs
 active_jobs = 0
 queue_lock = threading.Lock()
 
+# Rate limiting
+OPENAI_CALLS_PER_MINUTE = 15  # Limit OpenAI API calls to 15 per minute
+openai_call_timestamps = []
+rate_limit_lock = threading.Lock()
+
+# Batch processing
+batch_jobs = {}  # Store batches by batch_id
+
 # Flag to track if worker thread is running
 worker_running = False
 
@@ -153,7 +161,34 @@ def transcribe():
         }
     })
 
-def process_transcription(job_id, url, mode, lang, video_id):
+def check_rate_limit():
+    """
+    Check if we've hit the OpenAI API rate limit.
+    Returns True if we should wait, False if we can proceed.
+    """
+    with rate_limit_lock:
+        # Remove timestamps older than 1 minute
+        current_time = time.time()
+        one_minute_ago = current_time - 60
+        global openai_call_timestamps
+        openai_call_timestamps = [t for t in openai_call_timestamps if t > one_minute_ago]
+        
+        # Check if we've hit the rate limit
+        if len(openai_call_timestamps) >= OPENAI_CALLS_PER_MINUTE:
+            return True
+        
+        # Add current timestamp
+        openai_call_timestamps.append(current_time)
+        return False
+
+def wait_for_rate_limit():
+    """Wait until we're under the rate limit"""
+    while check_rate_limit():
+        # If we hit the rate limit, wait and then try again
+        logger.info("Rate limit hit, waiting before processing next job...")
+        time.sleep(5)
+
+def process_transcription(job_id, url, mode, lang, video_id, batch_id=None):
     """Process a single transcription job"""
     job_dir = None
     try:
@@ -176,6 +211,9 @@ def process_transcription(job_id, url, mode, lang, video_id):
         job_statuses[job_id]["status"] = "transcribing"
         job_statuses[job_id]["percent"] = 50
         
+        # Check rate limit before calling OpenAI API
+        wait_for_rate_limit()
+        
         # Transcribe with Whisper
         logger.info(f"Transcribing audio for job {job_id}")
         result = whisper_service.transcribe_audio_file(audio_file, lang)
@@ -193,12 +231,23 @@ def process_transcription(job_id, url, mode, lang, video_id):
         
         logger.info(f"Transcription complete for job {job_id}")
         
+        # Update batch status if part of a batch
+        if batch_id and batch_id in batch_jobs:
+            batch_jobs[batch_id]["completed"] += 1
+            if batch_jobs[batch_id]["completed"] == batch_jobs[batch_id]["total"]:
+                logger.info(f"Batch {batch_id} complete")
+                batch_jobs[batch_id]["status"] = "complete"
+        
     except Exception as e:
         logger.error(f"Error in transcription job {job_id}: {e}")
         # Update status to error
         job_statuses[job_id]["status"] = "error"
         job_statuses[job_id]["error"] = str(e)
         job_statuses[job_id]["percent"] = 0
+        
+        # Update batch status if part of a batch
+        if batch_id and batch_id in batch_jobs:
+            batch_jobs[batch_id]["failed"] += 1
     finally:
         # Clean up temporary files (in production, keep them longer)
         try:
@@ -207,6 +256,114 @@ def process_transcription(job_id, url, mode, lang, video_id):
         except Exception as e:
             logger.error(f"Error cleaning up job directory: {e}")
 
+# Batch processing endpoint
+@app.route('/api/batch', methods=['POST'])
+def batch_transcribe():
+    """API endpoint for batch transcription"""
+    data = request.json
+    logger.info(f"Batch transcription request received: {data}")
+    
+    # Extract URLs, mode, and language
+    urls = data.get("urls", [])
+    mode = data.get("mode", "auto")
+    lang = data.get("lang", "en")
+    
+    if not urls or not isinstance(urls, list):
+        return jsonify({"error": "Invalid URLs provided"}), 400
+    
+    # Generate batch ID
+    batch_id = f"batch-{int(time.time())}"
+    
+    # Create batch record
+    batch_jobs[batch_id] = {
+        "status": "processing",
+        "total": len(urls),
+        "completed": 0,
+        "failed": 0,
+        "created_at": time.time(),
+        "job_ids": []
+    }
+    
+    # Process each URL in the batch
+    for url in urls:
+        # Generate job ID
+        job_id = f"job-{int(time.time())}-{len(batch_jobs[batch_id]['job_ids'])}"
+        
+        # Extract video ID from URL
+        video_id = "demo"
+        if "v=" in url:
+            video_id = url.split("v=")[-1].split("&")[0]
+        elif "youtu.be/" in url:
+            video_id = url.split("youtu.be/")[-1].split("?")[0]
+        
+        # Store job status (initially queued)
+        job_statuses[job_id] = {
+            "status": "queued",
+            "percent": 5,
+            "video_id": video_id,
+            "mode": mode,
+            "lang": lang,
+            "queued_at": time.time(),
+            "batch_id": batch_id
+        }
+        
+        # Add job ID to batch
+        batch_jobs[batch_id]["job_ids"].append(job_id)
+        
+        # Create job data for the queue
+        job_data = {
+            "job_id": job_id,
+            "url": url,
+            "mode": mode,
+            "lang": lang,
+            "video_id": video_id,
+            "batch_id": batch_id
+        }
+        
+        # Add job to queue
+        transcription_queue.put(job_data)
+    
+    # Ensure worker thread is running
+    ensure_worker_thread()
+    
+    # Return response
+    return jsonify({
+        "batch_id": batch_id,
+        "status": "processing",
+        "total": len(urls),
+        "message": f"Batch transcription started with {len(urls)} videos",
+        "jobs": batch_jobs[batch_id]["job_ids"]
+    })
+
+# Batch status endpoint
+@app.route('/api/batch/<batch_id>/status')
+def batch_status(batch_id):
+    """Get batch status"""
+    if batch_id not in batch_jobs:
+        return jsonify({"error": "Batch not found"}), 404
+    
+    batch = batch_jobs[batch_id]
+    
+    # Calculate overall progress
+    if batch["total"] > 0:
+        total_progress = 0
+        for job_id in batch["job_ids"]:
+            if job_id in job_statuses:
+                total_progress += job_statuses[job_id]["percent"]
+        
+        overall_percent = int(total_progress / batch["total"])
+    else:
+        overall_percent = 0
+    
+    return jsonify({
+        "status": batch["status"],
+        "total": batch["total"],
+        "completed": batch["completed"],
+        "failed": batch["failed"],
+        "percent": overall_percent,
+        "jobs": batch["job_ids"]
+    })
+
 @app.route('/api/job/<job_id>/status')
 def job_status(job_id):
     """Get job status"""
@@ -214,11 +371,17 @@ def job_status(job_id):
         return jsonify({"error": "Job not found"}), 404
     
     status = job_statuses[job_id]
-    return jsonify({
+    response = {
         "status": status["status"],
         "percent": status["percent"],
         "error": status.get("error")
-    })
+    }
+    
+    # Include batch info if part of a batch
+    if "batch_id" in status:
+        response["batch_id"] = status["batch_id"]
+    
+    return jsonify(response)
 
 @app.route('/api/download/<job_id>')
 def download(job_id):
