@@ -331,16 +331,36 @@ def batch_transcribe():
         
         # Extract video ID from URL
         video_id = "demo"
+        video_title = "YouTube Video"
+        
         if "v=" in url:
             video_id = url.split("v=")[-1].split("&")[0]
         elif "youtu.be/" in url:
             video_id = url.split("youtu.be/")[-1].split("?")[0]
+            
+        # Try to get the video title
+        try:
+            # Use yt-dlp to get the video title
+            cmd = [
+                "yt-dlp",
+                "--skip-download",
+                "--print", "%(title)s",
+                url
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode == 0 and result.stdout.strip():
+                video_title = result.stdout.strip()
+        except Exception as e:
+            logger.error(f"Error getting video title: {e}")
+            # Fall back to video ID if we can't get the title
+            video_title = f"Video {video_id}"
         
         # Store job status (initially queued)
         job_statuses[job_id] = {
             "status": "queued",
             "percent": 5,
             "video_id": video_id,
+            "video_title": video_title,
             "mode": mode,
             "lang": lang,
             "queued_at": time.time(),
@@ -414,7 +434,8 @@ def job_status(job_id):
     response = {
         "status": status["status"],
         "percent": status["percent"],
-        "error": status.get("error")
+        "error": status.get("error"),
+        "video_title": status.get("video_title", f"Video {status.get('video_id', '')}")
     }
     
     # Include batch info if part of a batch
