@@ -206,9 +206,17 @@ function initBatchForm() {
                         jobStatus.textContent = 'Downloading';
                         statusColor = 'bg-info';
                         break;
+                    case 'processing':
+                        jobStatus.textContent = 'Processing';
+                        statusColor = 'bg-info';
+                        break;
                     case 'transcribing':
                         jobStatus.textContent = 'Transcribing';
                         statusColor = 'bg-primary';
+                        break;
+                    case 'finalizing':
+                        jobStatus.textContent = 'Finalizing';
+                        statusColor = 'bg-info';
                         break;
                     case 'complete':
                         jobStatus.textContent = 'Complete';

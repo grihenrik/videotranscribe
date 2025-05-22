@@ -217,12 +217,16 @@ def process_transcription(job_id, url, mode, lang, video_id, batch_id=None):
         if not audio_file:
             raise Exception("Failed to download audio")
         
-        # Update status to transcribing
-        job_statuses[job_id]["status"] = "transcribing"
-        job_statuses[job_id]["percent"] = 50
+        # Update status to processing (intermediate step)
+        job_statuses[job_id]["status"] = "processing"
+        job_statuses[job_id]["percent"] = 40
         
         # Check rate limit before calling OpenAI API
         wait_for_rate_limit()
+        
+        # Update status to transcribing
+        job_statuses[job_id]["status"] = "transcribing"
+        job_statuses[job_id]["percent"] = 60
         
         # Transcribe with Whisper
         logger.info(f"Transcribing audio for job {job_id}")
@@ -230,6 +234,10 @@ def process_transcription(job_id, url, mode, lang, video_id, batch_id=None):
         
         if not result:
             raise Exception("Failed to transcribe audio")
+        
+        # Update status to finalizing
+        job_statuses[job_id]["status"] = "finalizing"
+        job_statuses[job_id]["percent"] = 90
         
         # Save transcription files
         transcriptions[job_id] = result
