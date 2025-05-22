@@ -70,14 +70,19 @@ function initBatchForm() {
             
             // Create job items
             jobItems.innerHTML = '';
-            data.jobs.forEach(jobId => {
+            data.jobs.forEach(job => {
+                // Check if job is an object with job_id and video_title (new format)
+                // or just a string job ID (old format for backward compatibility)
+                const jobId = typeof job === 'object' ? job.job_id : job;
+                const videoTitle = typeof job === 'object' && job.video_title ? job.video_title : `Video ${jobId}`;
+                
                 const jobItem = document.createElement('div');
                 jobItem.className = 'list-group-item d-flex justify-content-between align-items-center';
                 jobItem.id = `job-${jobId}`;
                 
                 const jobTitle = document.createElement('div');
                 jobTitle.className = 'job-title';
-                jobTitle.textContent = `Job: ${jobId}`;
+                jobTitle.textContent = videoTitle; // Use video title instead of job ID
                 
                 const jobStatus = document.createElement('span');
                 jobStatus.className = 'badge bg-secondary';
