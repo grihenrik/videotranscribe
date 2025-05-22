@@ -184,6 +184,24 @@ function initPlaylistForm() {
                     batchStatusBadge.textContent = 'Complete';
                     batchStatusBadge.className = 'badge bg-success';
                     
+                    // Add download all as ZIP button if it doesn't exist
+                    if (!document.getElementById('download-playlist-zip')) {
+                        const downloadContainer = document.createElement('div');
+                        downloadContainer.className = 'text-center mt-3 mb-2';
+                        
+                        const downloadBtn = document.createElement('a');
+                        downloadBtn.id = 'download-playlist-zip';
+                        downloadBtn.href = `/api/batch/${batchId}/download`;
+                        downloadBtn.className = 'btn btn-primary';
+                        downloadBtn.innerHTML = '<i data-feather="download"></i> Download All Transcriptions as ZIP';
+                        
+                        downloadContainer.appendChild(downloadBtn);
+                        batchResults.querySelector('.card-body').appendChild(downloadContainer);
+                        
+                        // Initialize the Feather icon
+                        feather.replace();
+                    }
+                    
                     // Reset form
                     submitButton.disabled = false;
                     document.getElementById('playlist-url').disabled = false;

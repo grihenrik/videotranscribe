@@ -138,6 +138,24 @@ function initBatchForm() {
                     batchStatusBadge.textContent = 'Complete';
                     batchStatusBadge.className = 'badge bg-success';
                     
+                    // Add download all as ZIP button if it doesn't exist
+                    if (!document.getElementById('download-batch-zip')) {
+                        const downloadBatchContainer = document.createElement('div');
+                        downloadBatchContainer.className = 'text-center mt-3 mb-2';
+                        
+                        const downloadBatchBtn = document.createElement('a');
+                        downloadBatchBtn.id = 'download-batch-zip';
+                        downloadBatchBtn.href = `/api/batch/${batchId}/download`;
+                        downloadBatchBtn.className = 'btn btn-primary';
+                        downloadBatchBtn.innerHTML = '<i data-feather="download"></i> Download All as ZIP';
+                        
+                        downloadBatchContainer.appendChild(downloadBatchBtn);
+                        batchResults.querySelector('.card-body').appendChild(downloadBatchContainer);
+                        
+                        // Initialize the Feather icon
+                        feather.replace();
+                    }
+                    
                     // Reset form
                     submitButton.disabled = false;
                     document.getElementById('youtube-urls').disabled = false;
