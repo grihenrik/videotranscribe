@@ -102,7 +102,13 @@ function initPlaylistForm() {
                 
                 const jobTitle = document.createElement('div');
                 jobTitle.className = 'job-title';
-                jobTitle.textContent = `Video ${index + 1}: ${getVideoTitle(playlistData.videos[index])}`;
+                
+                // Use actual video title if available
+                if (playlistData.video_details && playlistData.video_details[index]) {
+                    jobTitle.textContent = `${index + 1}. ${playlistData.video_details[index].title}`;
+                } else {
+                    jobTitle.textContent = `Video ${index + 1}: ${getVideoTitle(playlistData.videos[index])}`;
+                }
                 
                 const jobStatus = document.createElement('span');
                 jobStatus.className = 'badge bg-secondary';

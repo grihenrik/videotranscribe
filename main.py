@@ -448,18 +448,19 @@ def extract_playlist_videos():
     
     # Extract videos from playlist
     try:
-        videos = whisper_service.extract_videos_from_playlist(playlist_url)
+        playlist_data = whisper_service.extract_videos_from_playlist(playlist_url)
         
-        if not videos:
+        if not playlist_data["videos"]:
             return jsonify({"error": "No videos found in playlist or playlist is private"}), 400
         
-        # Get playlist title from the first video
-        playlist_title = f"YouTube Playlist ({len(videos)} videos)"
+        # Convert the video objects to a format suitable for the batch API
+        video_urls = [video["url"] for video in playlist_data["videos"]]
         
         return jsonify({
-            "title": playlist_title,
-            "videos": videos,
-            "count": len(videos)
+            "title": playlist_data["title"],
+            "videos": video_urls,
+            "video_details": playlist_data["videos"],
+            "count": playlist_data["count"]
         })
     except Exception as e:
         logger.error(f"Error extracting playlist videos: {e}")
