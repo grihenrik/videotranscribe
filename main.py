@@ -50,6 +50,11 @@ def index():
     """Serve the main HTML page"""
     return send_from_directory('static', 'index.html')
 
+@app.route('/batch.html')
+def batch():
+    """Serve the batch processing HTML page"""
+    return send_from_directory('static', 'batch.html')
+
 @app.route('/css/<path:path>')
 def serve_css(path):
     """Serve CSS files"""
