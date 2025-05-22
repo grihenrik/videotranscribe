@@ -1,7 +1,9 @@
-import logging
-import sys
-from typing import List, Dict, Any, Optional
+"""
+Logging configuration for the application.
+"""
 
+import logging
+from typing import Dict, Any, Optional
 
 def setup_logging(level: str = "INFO") -> None:
     """
@@ -10,27 +12,23 @@ def setup_logging(level: str = "INFO") -> None:
     Args:
         level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     """
-    # Convert string level to logging level
-    numeric_level = getattr(logging, level.upper(), logging.INFO)
+    # Map string level to logging level
+    level_map = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL
+    }
     
-    # Configure logging
+    numeric_level = level_map.get(level.upper(), logging.INFO)
+    
+    # Configure root logger
     logging.basicConfig(
         level=numeric_level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-        handlers=[
-            logging.StreamHandler(sys.stdout)
-        ]
     )
-    
-    # Set specific loggers to different levels if needed
-    logging.getLogger("yt_dlp").setLevel(logging.WARNING)
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    
-    # Log setup completion
-    logger = logging.getLogger(__name__)
-    logger.info(f"Logging setup complete at level: {level}")
-
 
 class LoggerAdapter(logging.LoggerAdapter):
     """
@@ -47,7 +45,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         """
         super().__init__(logger, extra or {})
         self.prefix = prefix
-    
+
     def process(self, msg, kwargs):
         """
         Process the log message by adding the prefix and context.
@@ -63,7 +61,6 @@ class LoggerAdapter(logging.LoggerAdapter):
             msg = f"{self.prefix}: {msg}"
         return msg, kwargs
 
-
 def get_logger(name: str, prefix: str = "", extra: Optional[Dict[str, Any]] = None) -> LoggerAdapter:
     """
     Get a logger with optional prefix and context.
@@ -76,5 +73,4 @@ def get_logger(name: str, prefix: str = "", extra: Optional[Dict[str, Any]] = No
     Returns:
         Logger adapter
     """
-    logger = logging.getLogger(name)
-    return LoggerAdapter(logger, prefix, extra)
+    return LoggerAdapter(logging.getLogger(name), prefix, extra)

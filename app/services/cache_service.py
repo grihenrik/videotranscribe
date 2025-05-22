@@ -1,17 +1,22 @@
+"""
+Cache service implementation.
+
+This module provides caching functionality for the application,
+with support for in-memory and Redis backends.
+"""
+import time
 import json
-import logging
 import asyncio
-from typing import Dict, Any, Optional, Union
-from functools import lru_cache
+from typing import Any, Dict, Optional
+import logging
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-
 class CacheService:
     """Base class for caching services."""
-    
+
     async def get(self, key: str) -> Optional[Any]:
         """
         Get a value from the cache.
@@ -22,8 +27,8 @@ class CacheService:
         Returns:
             Cached value or None if not found
         """
-        raise NotImplementedError
-    
+        raise NotImplementedError("Subclasses must implement get()")
+
     async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
         """
         Set a value in the cache.
@@ -36,8 +41,8 @@ class CacheService:
         Returns:
             True if successful, False otherwise
         """
-        raise NotImplementedError
-    
+        raise NotImplementedError("Subclasses must implement set()")
+
     async def delete(self, key: str) -> bool:
         """
         Delete a value from the cache.
@@ -48,12 +53,12 @@ class CacheService:
         Returns:
             True if successful, False otherwise
         """
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement delete()")
 
 
 class MemoryCacheService(CacheService):
     """In-memory cache service."""
-    
+
     def __init__(self, ttl: int = 86400):
         """
         Initialize the memory cache service.
@@ -64,10 +69,9 @@ class MemoryCacheService(CacheService):
         self.cache: Dict[str, Dict[str, Any]] = {}
         self.default_ttl = ttl
         
-        # Start expiration task
-        self.task = asyncio.create_task(self._expire_loop())
-        logger.info("Started memory cache expiration loop")
-    
+        # Start expiration loop
+        self._expire_task = asyncio.create_task(self._expire_loop())
+
     async def get(self, key: str) -> Optional[Any]:
         """
         Get a value from the cache.
@@ -78,17 +82,16 @@ class MemoryCacheService(CacheService):
         Returns:
             Cached value or None if not found
         """
-        entry = self.cache.get(key)
-        if entry is None:
+        if key not in self.cache:
             return None
         
-        # Check if entry is expired
-        if entry.get("expires_at") and entry["expires_at"] <= asyncio.get_event_loop().time():
+        # Check if expired
+        if self.cache[key]["expires_at"] < time.time():
             await self.delete(key)
             return None
         
-        return entry["value"]
-    
+        return self.cache[key]["value"]
+
     async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
         """
         Set a value in the cache.
@@ -101,19 +104,13 @@ class MemoryCacheService(CacheService):
         Returns:
             True if successful, False otherwise
         """
-        ttl = ttl or self.default_ttl
-        
-        # Calculate expiration time
-        expires_at = asyncio.get_event_loop().time() + ttl if ttl > 0 else None
-        
-        # Store in cache
+        expires_at = time.time() + (ttl or self.default_ttl)
         self.cache[key] = {
             "value": value,
             "expires_at": expires_at
         }
-        
         return True
-    
+
     async def delete(self, key: str) -> bool:
         """
         Delete a value from the cache.
@@ -128,18 +125,18 @@ class MemoryCacheService(CacheService):
             del self.cache[key]
             return True
         return False
-    
+        
     async def _expire_loop(self) -> None:
         """
         Loop to expire cache entries.
         """
-        while True:
-            try:
+        try:
+            while True:
+                now = time.time()
                 # Find expired keys
-                now = asyncio.get_event_loop().time()
                 expired_keys = [
-                    key for key, entry in self.cache.items()
-                    if entry.get("expires_at") and entry["expires_at"] <= now
+                    key for key, data in self.cache.items() 
+                    if data["expires_at"] < now
                 ]
                 
                 # Delete expired keys
@@ -148,16 +145,16 @@ class MemoryCacheService(CacheService):
                 
                 # Sleep for a while
                 await asyncio.sleep(60)  # Check every minute
-            except asyncio.CancelledError:
-                break
-            except Exception as e:
-                logger.error(f"Error in expiration loop: {str(e)}")
-                await asyncio.sleep(60)  # Sleep on error and retry
+        except asyncio.CancelledError:
+            # Task was cancelled
+            pass
+        except Exception as e:
+            logger.error(f"Error in expire loop: {e}")
 
 
 class RedisCacheService(CacheService):
     """Redis cache service."""
-    
+
     def __init__(self, url: str, ttl: int = 86400):
         """
         Initialize the Redis cache service.
@@ -168,8 +165,8 @@ class RedisCacheService(CacheService):
         """
         self.url = url
         self.default_ttl = ttl
-        self.redis = None
-    
+        self._redis = None
+
     async def _get_redis(self):
         """
         Get Redis connection.
@@ -177,15 +174,15 @@ class RedisCacheService(CacheService):
         Returns:
             Redis connection
         """
-        if self.redis is None:
+        if self._redis is None:
             try:
                 import redis.asyncio as redis
-                self.redis = redis.from_url(self.url)
+                self._redis = redis.from_url(self.url)
             except ImportError:
-                logger.error("Redis package is not installed. Please install it with: pip install redis")
+                logger.error("Redis package not installed - please install with 'pip install redis'")
                 raise
-        return self.redis
-    
+        return self._redis
+
     async def get(self, key: str) -> Optional[Any]:
         """
         Get a value from the cache.
@@ -196,17 +193,16 @@ class RedisCacheService(CacheService):
         Returns:
             Cached value or None if not found
         """
-        redis = await self._get_redis()
-        value = await redis.get(key)
-        
-        if value is None:
-            return None
-        
         try:
+            redis = await self._get_redis()
+            value = await redis.get(key)
+            if value is None:
+                return None
             return json.loads(value)
-        except json.JSONDecodeError:
-            return value.decode("utf-8")
-    
+        except Exception as e:
+            logger.error(f"Error getting value from Redis: {e}")
+            return None
+
     async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
         """
         Set a value in the cache.
@@ -219,18 +215,15 @@ class RedisCacheService(CacheService):
         Returns:
             True if successful, False otherwise
         """
-        redis = await self._get_redis()
-        ttl = ttl or self.default_ttl
-        
-        # Serialize value
-        if isinstance(value, (dict, list, tuple)):
-            value = json.dumps(value)
-        
-        # Set in Redis
-        await redis.set(key, value, ex=ttl if ttl > 0 else None)
-        
-        return True
-    
+        try:
+            redis = await self._get_redis()
+            serialized = json.dumps(value)
+            await redis.set(key, serialized, ex=(ttl or self.default_ttl))
+            return True
+        except Exception as e:
+            logger.error(f"Error setting value in Redis: {e}")
+            return False
+
     async def delete(self, key: str) -> bool:
         """
         Delete a value from the cache.
@@ -241,12 +234,15 @@ class RedisCacheService(CacheService):
         Returns:
             True if successful, False otherwise
         """
-        redis = await self._get_redis()
-        result = await redis.delete(key)
-        return result > 0
+        try:
+            redis = await self._get_redis()
+            await redis.delete(key)
+            return True
+        except Exception as e:
+            logger.error(f"Error deleting value from Redis: {e}")
+            return False
 
 
-@lru_cache()
 def get_cache_service() -> CacheService:
     """
     Get the cache service based on configuration.
@@ -254,9 +250,9 @@ def get_cache_service() -> CacheService:
     Returns:
         Cache service instance
     """
-    if settings.CACHE_TYPE.lower() == "redis" and settings.REDIS_URL:
-        logger.info("Using Redis cache service")
+    cache_type = settings.CACHE_TYPE.lower()
+    
+    if cache_type == "redis":
         return RedisCacheService(settings.REDIS_URL, settings.CACHE_TTL)
     else:
-        logger.info("Using in-memory cache service")
         return MemoryCacheService(settings.CACHE_TTL)

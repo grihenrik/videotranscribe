@@ -1,8 +1,13 @@
-import os
-from pydantic_settings import BaseSettings
-from pydantic import validator, model_validator
-from typing import Optional, List, Dict, Any
+"""
+Application settings module.
 
+This module contains the configuration settings for the application,
+loaded from environment variables with default values.
+"""
+
+import os
+from typing import List, Optional
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     """
@@ -11,7 +16,7 @@ class Settings(BaseSettings):
     These settings are loaded from environment variables and provide
     default values when environment variables are not set.
     """
-    # API settings
+    
     API_V1_STR: str = "/api"
     PROJECT_NAME: str = "YouTube Transcription API"
     
@@ -26,12 +31,12 @@ class Settings(BaseSettings):
     # Whisper settings
     WHISPER_MODEL: str = os.getenv("WHISPER_MODEL", "base")  # tiny, base, small, medium, large
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
-    USE_OPENAI_WHISPER: bool = os.getenv("USE_OPENAI_WHISPER", "false").lower() == "true"
+    USE_OPENAI_WHISPER: bool = os.getenv("USE_OPENAI_WHISPER", "true").lower() == "true"
     
-    # File storage
+    # File storage settings
     TEMP_DIR: str = os.getenv("TEMP_DIR", "tmp")
     
-    # Enable GPU acceleration if available
+    # Hardware settings
     USE_GPU: bool = os.getenv("USE_GPU", "false").lower() == "true"
     
     class Config:
@@ -39,4 +44,5 @@ class Settings(BaseSettings):
         case_sensitive = True
 
 
+# Create a settings instance
 settings = Settings()

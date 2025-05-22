@@ -1,15 +1,15 @@
+"""
+Request models for the API.
+"""
 from enum import Enum
-from typing import Optional
-
-from pydantic import BaseModel, HttpUrl, Field, validator
-
+from pydantic import BaseModel, Field, validator
+import re
 
 class TranscriptionMode(str, Enum):
     """Transcription mode enumeration."""
     AUTO = "auto"
     CAPTIONS = "captions"
     WHISPER = "whisper"
-
 
 class TranscriptionRequest(BaseModel):
     """
@@ -24,26 +24,27 @@ class TranscriptionRequest(BaseModel):
     mode: TranscriptionMode = Field(default=TranscriptionMode.AUTO, description="Transcription mode")
     lang: str = Field(default="en", description="ISO639-1 language code")
     
-    @validator("url")
+    @validator('url')
     def validate_url(cls, v):
         """Validate YouTube URL."""
-        if not v:
-            raise ValueError("URL cannot be empty")
+        if not v or not isinstance(v, str):
+            raise ValueError("URL must be a non-empty string")
         
-        # Simple validation for YouTube URL
-        if "youtube.com" not in v and "youtu.be" not in v:
-            raise ValueError("URL must be a valid YouTube URL")
+        # Check if it's a valid YouTube URL
+        youtube_pattern = r'^(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)[a-zA-Z0-9_-]{11}.*$'
+        if not re.match(youtube_pattern, v):
+            raise ValueError("Invalid YouTube URL")
         
         return v
     
-    @validator("lang")
+    @validator('lang')
     def validate_lang(cls, v):
         """Validate language code."""
-        if not v:
-            return "en"
+        if not v or not isinstance(v, str) or len(v) < 2:
+            raise ValueError("Language code must be a non-empty string with at least 2 characters")
         
-        # Simple validation for ISO639-1 code
-        if len(v) != 2:
-            raise ValueError("Language code must be a 2-letter ISO639-1 code")
+        # Simple check for ISO639-1 format
+        if not re.match(r'^[a-z]{2,3}(-[A-Z]{2})?$', v):
+            raise ValueError("Invalid language code format (expected ISO639-1)")
         
         return v
