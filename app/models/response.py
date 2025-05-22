@@ -1,7 +1,8 @@
-from typing import Dict, Optional, List, Any
-
+"""
+Response models for the API.
+"""
+from typing import Dict, Optional
 from pydantic import BaseModel, Field
-
 
 class JobStatus(BaseModel):
     """
@@ -15,7 +16,6 @@ class JobStatus(BaseModel):
     status: str = Field(..., description="Job status")
     percent: int = Field(..., description="Completion percentage", ge=0, le=100)
     error: Optional[str] = Field(None, description="Error message if status is 'error'")
-
 
 class TranscriptionResponse(BaseModel):
     """
@@ -39,7 +39,6 @@ class TranscriptionResponse(BaseModel):
     )
     error: Optional[str] = Field(None, description="Error message if status is 'error'")
 
-
 class CaptionItem(BaseModel):
     """
     Caption item model.
@@ -52,7 +51,6 @@ class CaptionItem(BaseModel):
     start: str = Field(..., description="Start time")
     end: str = Field(..., description="End time")
     text: str = Field(..., description="Caption text")
-
 
 class Transcription(BaseModel):
     """
