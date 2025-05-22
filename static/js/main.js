@@ -28,8 +28,11 @@ function initTranscriptionForm() {
         const transcriptionMode = document.getElementById('transcription-mode').value;
         const language = document.getElementById('language').value;
         
-        // Disable form and show spinner
+        // Disable form inputs and button during processing
         submitButton.disabled = true;
+        document.getElementById('youtube-url').disabled = true;
+        document.getElementById('transcription-mode').disabled = true;
+        document.getElementById('language').disabled = true;
         submitButton.querySelector('span:first-child').textContent = 'Processing...';
         submitSpinner.classList.remove('d-none');
         
@@ -103,6 +106,9 @@ function initTranscriptionForm() {
                     
                     // Reset form
                     submitButton.disabled = false;
+                    document.getElementById('youtube-url').disabled = false;
+                    document.getElementById('transcription-mode').disabled = false;
+                    document.getElementById('language').disabled = false;
                     submitButton.querySelector('span:first-child').textContent = 'Transcribe Another Video';
                     submitSpinner.classList.add('d-none');
                     
@@ -114,6 +120,9 @@ function initTranscriptionForm() {
                     
                     // Reset form
                     submitButton.disabled = false;
+                    document.getElementById('youtube-url').disabled = false;
+                    document.getElementById('transcription-mode').disabled = false;
+                    document.getElementById('language').disabled = false;
                     submitButton.querySelector('span:first-child').textContent = 'Try Again';
                     submitSpinner.classList.add('d-none');
                     
@@ -129,6 +138,9 @@ function initTranscriptionForm() {
                 
                 // Reset form
                 submitButton.disabled = false;
+                document.getElementById('youtube-url').disabled = false;
+                document.getElementById('transcription-mode').disabled = false;
+                document.getElementById('language').disabled = false;
                 submitButton.querySelector('span:first-child').textContent = 'Transcribe Video';
                 submitSpinner.classList.add('d-none');
             }

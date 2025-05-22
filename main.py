@@ -6,6 +6,7 @@ import time
 import threading
 import tempfile
 import shutil
+import queue
 from werkzeug.serving import run_simple
 
 # Import our Whisper service
@@ -21,6 +22,15 @@ app = Flask(__name__, static_folder='static')
 # Temporary storage for job statuses and transcriptions
 job_statuses = {}
 transcriptions = {}
+
+# Create a transcription job queue
+transcription_queue = queue.Queue()
+MAX_CONCURRENT_JOBS = 2  # Limit concurrent jobs
+active_jobs = 0
+queue_lock = threading.Lock()
+
+# Flag to track if worker thread is running
+worker_running = False
 
 # Create a directory for temporary files
 TEMP_DIR = os.path.join(tempfile.gettempdir(), "youtube_transcription")
@@ -41,6 +51,47 @@ def serve_css(path):
 def serve_js(path):
     """Serve JavaScript files"""
     return send_from_directory('static/js', path)
+
+# Start the worker thread if not already running
+def ensure_worker_thread():
+    """Ensure the worker thread is running"""
+    global worker_running
+    if not worker_running:
+        worker_thread = threading.Thread(target=process_queue)
+        worker_thread.daemon = True
+        worker_thread.start()
+        worker_running = True
+        logger.info("Started transcription queue worker thread")
+
+def process_queue():
+    """Process jobs from the transcription queue"""
+    global active_jobs
+    while True:
+        try:
+            # Get the next job from the queue
+            job_data = transcription_queue.get(block=True, timeout=60)
+            
+            # Process the job
+            with queue_lock:
+                active_jobs += 1
+            
+            process_transcription(**job_data)
+            
+            # Mark the job as done
+            with queue_lock:
+                active_jobs -= 1
+                
+            # Mark the queue task as done
+            transcription_queue.task_done()
+            
+        except queue.Empty:
+            # No jobs for 60 seconds, continue waiting
+            pass
+        except Exception as e:
+            logger.error(f"Error in queue processing: {e}")
+            # Reduce active job count on error
+            with queue_lock:
+                active_jobs = max(0, active_jobs - 1)
 
 # API endpoints for transcription
 @app.route('/api/transcribe', methods=['POST'])
@@ -64,29 +115,37 @@ def transcribe():
     mode = data.get("mode", "auto")
     lang = data.get("lang", "en")
     
-    # Store job status
+    # Store job status (initially queued)
     job_statuses[job_id] = {
-        "status": "processing",
-        "percent": 10,
+        "status": "queued",
+        "percent": 5,
         "video_id": video_id,
         "mode": mode,
-        "lang": lang
+        "lang": lang,
+        "queued_at": time.time()
     }
     
-    # Start transcription in a background thread
-    thread = threading.Thread(
-        target=process_transcription,
-        args=(job_id, url, mode, lang, video_id)
-    )
-    thread.daemon = True
-    thread.start()
+    # Create job data for the queue
+    job_data = {
+        "job_id": job_id,
+        "url": url,
+        "mode": mode,
+        "lang": lang,
+        "video_id": video_id
+    }
+    
+    # Add job to queue
+    transcription_queue.put(job_data)
+    
+    # Ensure worker thread is running
+    ensure_worker_thread()
     
     # Return response
     return jsonify({
         "job_id": job_id,
-        "status": "processing",
+        "status": "queued",
         "video_id": video_id,
-        "message": "Transcription started",
+        "message": "Transcription queued",
         "download_links": {
             "txt": f"/api/download/{job_id}?format=txt",
             "srt": f"/api/download/{job_id}?format=srt",
@@ -95,7 +154,8 @@ def transcribe():
     })
 
 def process_transcription(job_id, url, mode, lang, video_id):
-    """Process transcription in background"""
+    """Process a single transcription job"""
+    job_dir = None
     try:
         # Update status to downloading
         job_statuses[job_id]["status"] = "downloading"
@@ -129,6 +189,7 @@ def process_transcription(job_id, url, mode, lang, video_id):
         # Update status to complete
         job_statuses[job_id]["status"] = "complete"
         job_statuses[job_id]["percent"] = 100
+        job_statuses[job_id]["completed_at"] = time.time()
         
         logger.info(f"Transcription complete for job {job_id}")
         
@@ -141,7 +202,7 @@ def process_transcription(job_id, url, mode, lang, video_id):
     finally:
         # Clean up temporary files (in production, keep them longer)
         try:
-            if os.path.exists(job_dir):
+            if job_dir and os.path.exists(job_dir):
                 shutil.rmtree(job_dir)
         except Exception as e:
             logger.error(f"Error cleaning up job directory: {e}")
