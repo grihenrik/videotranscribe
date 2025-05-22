@@ -102,40 +102,72 @@ def download_audio_from_youtube(url, output_path=None):
         
 def extract_videos_from_playlist(playlist_url):
     """
-    Extract video URLs from a YouTube playlist.
+    Extract video URLs and titles from a YouTube playlist.
     
     Args:
         playlist_url (str): YouTube playlist URL
         
     Returns:
-        list: List of video URLs in the playlist
+        dict: Dictionary with playlist info, video URLs and titles
     """
     try:
         # Create a temporary directory
         temp_dir = tempfile.mkdtemp()
             
-        # Set up yt-dlp options to get playlist info
-        cmd = [
+        # First get the playlist title
+        title_cmd = [
             "yt-dlp",
             "--flat-playlist",
-            "--get-id",
+            "--print", "%(playlist_title)s",
+            "--playlist-items", "1",
             playlist_url
         ]
         
-        # Run the command
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        title_result = subprocess.run(title_cmd, capture_output=True, text=True)
+        playlist_title = title_result.stdout.strip() or "YouTube Playlist"
         
-        if result.returncode != 0:
-            raise Exception(f"yt-dlp failed: {result.stderr}")
+        # Get video IDs, titles, and URLs
+        info_cmd = [
+            "yt-dlp",
+            "--flat-playlist",
+            "--print", "%(id)s:%(title)s",
+            playlist_url
+        ]
         
-        # Extract video IDs and convert to URLs
-        video_ids = result.stdout.strip().split('\n')
-        video_urls = [f"https://www.youtube.com/watch?v={video_id}" for video_id in video_ids if video_id]
+        info_result = subprocess.run(info_cmd, capture_output=True, text=True)
         
-        return video_urls
+        if info_result.returncode != 0:
+            raise Exception(f"yt-dlp failed: {info_result.stderr}")
+        
+        # Parse the output to get video IDs and titles
+        videos = []
+        video_lines = info_result.stdout.strip().split('\n')
+        
+        for line in video_lines:
+            if ':' in line:
+                parts = line.split(':', 1)  # Split only on first colon
+                video_id = parts[0].strip()
+                video_title = parts[1].strip()
+                
+                if video_id:
+                    videos.append({
+                        "id": video_id,
+                        "title": video_title,
+                        "url": f"https://www.youtube.com/watch?v={video_id}"
+                    })
+        
+        return {
+            "title": playlist_title,
+            "videos": videos,
+            "count": len(videos)
+        }
     except Exception as e:
         print(f"Error extracting playlist videos: {e}")
-        return []
+        return {
+            "title": "YouTube Playlist",
+            "videos": [],
+            "count": 0
+        }
 
 def convert_to_srt(text, chunk_duration=5):
     """
