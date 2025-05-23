@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Admin Sidebar -->
+        <div class="col-md-3 col-lg-2 px-0 bg-dark sidebar">
+            <div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" style="min-height: calc(100vh - 56px);">
+                <span class="fs-4 mb-3">Admin Panel</span>
+                <hr>
+                <ul class="nav nav-pills flex-column mb-auto">
+                    <li class="nav-item">
+                        <a href="{{ url_for('admin.dashboard') }}" class="nav-link text-white {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                            <i class="bi bi-speedometer2 me-2"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('admin.users') }}" class="nav-link text-white {% if request.endpoint == 'admin.users' %}active{% endif %}">
+                            <i class="bi bi-people me-2"></i>
+                            Users
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('admin.transcriptions') }}" class="nav-link text-white {% if request.endpoint == 'admin.transcriptions' %}active{% endif %}">
+                            <i class="bi bi-file-text me-2"></i>
+                            Transcriptions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('admin.oauth_settings') }}" class="nav-link text-white {% if request.endpoint == 'admin.oauth_settings' %}active{% endif %}">
+                            <i class="bi bi-gear me-2"></i>
+                            OAuth Settings
+                        </a>
+                    </li>
+                </ul>
+                <hr>
+                <div class="dropdown">
+                    <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if current_user.profile_image_url %}
+                        <img src="{{ current_user.profile_image_url }}" alt="{{ current_user.first_name }}" width="32" height="32" class="rounded-circle me-2">
+                        {% else %}
+                        <div class="bg-secondary rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 32px; height: 32px;">
+                            <i class="bi bi-person-fill text-white"></i>
+                        </div>
+                        {% endif %}
+                        <strong>{{ current_user.first_name }}</strong>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                        <li><a class="dropdown-item" href="{{ url_for('settings') }}">Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('logout') }}">Sign out</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 ms-auto">
+            <div class="container py-4">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                {% block admin_content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
