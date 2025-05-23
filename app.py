@@ -2,7 +2,7 @@ import os
 import logging
 import datetime
 from flask import Flask, render_template, redirect, url_for, flash, request, session, Response
-from flask_login import LoginManager, current_user
+from flask_login import LoginManager, current_user, login_required
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -76,3 +76,16 @@ from admin_routes import admin_bp
 
 # Register admin blueprint
 app.register_blueprint(admin_bp)
+
+# Add admin redirect route
+@app.route('/admin')
+@login_required
+def admin_redirect():
+    """Redirect to admin dashboard"""
+    from auth import admin_required
+    # Check if user is admin before redirecting
+    if current_user.is_admin:
+        return redirect(url_for('admin.dashboard'))
+    else:
+        flash('You do not have permission to access the admin panel.', 'danger')
+        return redirect(url_for('index'))
