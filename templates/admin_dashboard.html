@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "admin_base.html" %}
 
 {% block title %}Admin Dashboard - YouTube Transcription Tool{% endblock %}
 
@@ -7,18 +7,25 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
 
-{% block content %}
+{% block admin_content %}
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Admin Dashboard</h2>
-            <div>
-                <select id="timeRange" class="form-select" onchange="updateDashboard()">
-                    <option value="7">Last 7 days</option>
-                    <option value="30">Last 30 days</option>
-                    <option value="90">Last 90 days</option>
-                    <option value="365">Last year</option>
-                </select>
+            <div class="d-flex">
+                <div class="me-2">
+                    <a href="{{ url_for('admin.oauth_settings') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-gear"></i> OAuth Settings
+                    </a>
+                </div>
+                <div>
+                    <select id="timeRange" class="form-select" onchange="updateDashboard()">
+                        <option value="7">Last 7 days</option>
+                        <option value="30">Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                        <option value="365">Last year</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
