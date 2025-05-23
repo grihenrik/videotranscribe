@@ -39,6 +39,22 @@ class OAuth(OAuthConsumerMixin, db.Model):
         name='uq_user_browser_session_key_provider',
     ),)
 
+# OAuth Provider Settings model
+class OAuthProviderSettings(db.Model):
+    """Model for storing OAuth provider settings"""
+    __tablename__ = 'oauth_provider_settings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    provider_name = db.Column(db.String(50), unique=True, nullable=False)
+    is_enabled = db.Column(db.Boolean, default=False)
+    client_id = db.Column(db.String(255))
+    client_secret = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    def __repr__(self):
+        return f'<OAuthProviderSettings {self.provider_name}>'
+
 # Transcription model to track user usage
 class Transcription(db.Model):
     __tablename__ = 'transcriptions'

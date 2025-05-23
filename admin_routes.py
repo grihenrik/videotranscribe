@@ -1,3 +1,4 @@
+import os
 import datetime
 from datetime import timedelta
 from flask import Blueprint, render_template, redirect, url_for, request, flash
@@ -5,7 +6,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func, desc, and_
 
 from app import db
-from models import User, Transcription, DailyStats
+from models import User, Transcription, DailyStats, OAuthProviderSettings
 from auth import admin_required
 
 # Create admin blueprint
@@ -139,6 +140,120 @@ def dashboard():
         recent_transcriptions=recent_transcriptions,
         chart_data=chart_data
     )
+
+@admin_bp.route('/oauth-settings')
+@login_required
+@admin_required
+def oauth_settings():
+    """Admin OAuth settings page"""
+    # Get current OAuth provider settings
+    google_settings = OAuthProviderSettings.query.filter_by(provider_name='google').first()
+    twitter_settings = OAuthProviderSettings.query.filter_by(provider_name='twitter').first()
+    discord_settings = OAuthProviderSettings.query.filter_by(provider_name='discord').first()
+    
+    # Create default settings if they don't exist
+    if not google_settings:
+        google_settings = OAuthProviderSettings(
+            provider_name='google',
+            is_enabled=False,
+            client_id=os.environ.get('GOOGLE_CLIENT_ID', ''),
+            client_secret=os.environ.get('GOOGLE_CLIENT_SECRET', '')
+        )
+        db.session.add(google_settings)
+        
+    if not twitter_settings:
+        twitter_settings = OAuthProviderSettings(
+            provider_name='twitter',
+            is_enabled=False,
+            client_id=os.environ.get('TWITTER_CLIENT_ID', ''),
+            client_secret=os.environ.get('TWITTER_CLIENT_SECRET', '')
+        )
+        db.session.add(twitter_settings)
+        
+    if not discord_settings:
+        discord_settings = OAuthProviderSettings(
+            provider_name='discord',
+            is_enabled=False,
+            client_id=os.environ.get('DISCORD_CLIENT_ID', ''),
+            client_secret=os.environ.get('DISCORD_CLIENT_SECRET', '')
+        )
+        db.session.add(discord_settings)
+        
+    db.session.commit()
+    
+    # Get the callback domain (for displaying in UI)
+    callback_domain = request.host_url.rstrip('/')
+    if callback_domain.startswith('http:'):
+        callback_domain = callback_domain.replace('http:', 'https:')
+    
+    return render_template(
+        'admin_oauth.html',
+        google_enabled=google_settings.is_enabled,
+        google_client_id=google_settings.client_id,
+        google_client_secret='●●●●●●●●●●●●' if google_settings.client_secret else '',
+        twitter_enabled=twitter_settings.is_enabled,
+        twitter_client_id=twitter_settings.client_id,
+        twitter_client_secret='●●●●●●●●●●●●' if twitter_settings.client_secret else '',
+        discord_enabled=discord_settings.is_enabled,
+        discord_client_id=discord_settings.client_id,
+        discord_client_secret='●●●●●●●●●●●●' if discord_settings.client_secret else '',
+        callback_domain=callback_domain
+    )
+
+@admin_bp.route('/update-oauth-settings', methods=['POST'])
+@login_required
+@admin_required
+def update_oauth_settings():
+    """Update OAuth provider settings"""
+    provider = request.form.get('provider')
+    enabled = 'enabled' in request.form
+    client_id = request.form.get('client_id', '')
+    client_secret = request.form.get('client_secret', '')
+    
+    if not provider:
+        flash('Provider name is required', 'danger')
+        return redirect(url_for('admin.oauth_settings'))
+    
+    # Get the provider settings
+    provider_settings = OAuthProviderSettings.query.filter_by(provider_name=provider).first()
+    
+    if not provider_settings:
+        provider_settings = OAuthProviderSettings(provider_name=provider)
+        db.session.add(provider_settings)
+    
+    # Update the settings
+    provider_settings.is_enabled = enabled
+    
+    # Only update client ID if provided
+    if client_id:
+        provider_settings.client_id = client_id
+    
+    # Only update client secret if provided and not masked
+    if client_secret and not client_secret.startswith('●'):
+        provider_settings.client_secret = client_secret
+    
+    db.session.commit()
+    
+    # Also update environment variables for immediate effect
+    if provider == 'google':
+        os.environ['GOOGLE_CLIENT_ID'] = client_id or os.environ.get('GOOGLE_CLIENT_ID', '')
+        if client_secret and not client_secret.startswith('●'):
+            os.environ['GOOGLE_CLIENT_SECRET'] = client_secret
+    elif provider == 'twitter':
+        os.environ['TWITTER_CLIENT_ID'] = client_id or os.environ.get('TWITTER_CLIENT_ID', '')
+        if client_secret and not client_secret.startswith('●'):
+            os.environ['TWITTER_CLIENT_SECRET'] = client_secret
+    elif provider == 'discord':
+        os.environ['DISCORD_CLIENT_ID'] = client_id or os.environ.get('DISCORD_CLIENT_ID', '')
+        if client_secret and not client_secret.startswith('●'):
+            os.environ['DISCORD_CLIENT_SECRET'] = client_secret
+    
+    # Reload OAuth providers in auth module
+    from auth import register_oauth_providers
+    register_oauth_providers()
+    
+    flash(f'{provider.capitalize()} OAuth settings updated successfully', 'success')
+    return redirect(url_for('admin.oauth_settings'))
 
 @admin_bp.route('/users')
 @login_required
