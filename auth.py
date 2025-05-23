@@ -18,8 +18,9 @@ from models import User, OAuth
 # Create auth blueprint
 auth_bp = Blueprint('auth', __name__, template_folder='templates')
 
-# Create auth blueprint
-auth_bp = Blueprint('auth', __name__, template_folder='templates')
+# Create a LoginManager instance
+login_manager = LoginManager(app)
+login_manager.login_view = 'auth.login'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -86,7 +87,8 @@ def setup_google_oauth():
         base_url="https://www.googleapis.com/oauth2/v1/",
         authorization_url="https://accounts.google.com/o/oauth2/auth",
         token_url="https://accounts.google.com/o/oauth2/token",
-        redirect_to="auth.oauth_callback",
+        redirect_url="https://thetranscriptiontool.replit.app/auth/google/authorized",
+        redirect_to="auth.google_authorized",
         storage=storage,
     )
     
@@ -112,7 +114,8 @@ def setup_twitter_oauth():
         base_url="https://api.twitter.com/2/",
         authorization_url="https://twitter.com/i/oauth2/authorize",
         token_url="https://api.twitter.com/2/oauth2/token",
-        redirect_to="auth.oauth_callback",
+        redirect_url="https://thetranscriptiontool.replit.app/auth/twitter/authorized",
+        redirect_to="auth.twitter_authorized",
         storage=storage,
     )
     
@@ -138,7 +141,8 @@ def setup_discord_oauth():
         base_url="https://discord.com/api/",
         authorization_url="https://discord.com/api/oauth2/authorize",
         token_url="https://discord.com/api/oauth2/token",
-        redirect_to="auth.oauth_callback",
+        redirect_url="https://thetranscriptiontool.replit.app/auth/discord/authorized",
+        redirect_to="auth.discord_authorized",
         storage=storage,
     )
     
@@ -184,7 +188,41 @@ def login():
     providers = app.config.get('OAUTH_PROVIDERS', [])
     return render_template('login.html', providers=providers)
 
-# Callback after OAuth login
+# OAuth callback routes
+@auth_bp.route('/google/authorized')
+def google_authorized():
+    # This is the URL that Google will redirect to after authentication
+    if current_user.is_authenticated:
+        flash('Successfully signed in with Google!', 'success')
+        next_url = session.pop('next_url', None) or url_for('index')
+        return redirect(next_url)
+    else:
+        flash('Google login failed. Please try again.', 'danger')
+        return redirect(url_for('auth.login'))
+
+@auth_bp.route('/twitter/authorized')
+def twitter_authorized():
+    # This is the URL that Twitter will redirect to after authentication
+    if current_user.is_authenticated:
+        flash('Successfully signed in with Twitter!', 'success')
+        next_url = session.pop('next_url', None) or url_for('index')
+        return redirect(next_url)
+    else:
+        flash('Twitter login failed. Please try again.', 'danger')
+        return redirect(url_for('auth.login'))
+
+@auth_bp.route('/discord/authorized')
+def discord_authorized():
+    # This is the URL that Discord will redirect to after authentication
+    if current_user.is_authenticated:
+        flash('Successfully signed in with Discord!', 'success')
+        next_url = session.pop('next_url', None) or url_for('index')
+        return redirect(next_url)
+    else:
+        flash('Discord login failed. Please try again.', 'danger')
+        return redirect(url_for('auth.login'))
+
+# Generic callback after OAuth login
 @auth_bp.route('/oauth-callback')
 def oauth_callback():
     # This route will be hit after a successful OAuth login
