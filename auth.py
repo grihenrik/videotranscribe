@@ -69,14 +69,39 @@ class UserSessionStorage:
 
 # Google OAuth setup
 def setup_google_oauth():
-    client_id = os.environ.get("GOOGLE_CLIENT_ID")
-    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    # First, try to get settings from database
+    try:
+        from models import OAuthProviderSettings
+        provider_settings = OAuthProviderSettings.query.filter_by(provider_name='google').first()
+        
+        if provider_settings and provider_settings.is_enabled:
+            client_id = provider_settings.client_id
+            client_secret = provider_settings.client_secret
+        else:
+            # If not enabled in DB, use environment variables
+            client_id = os.environ.get("GOOGLE_CLIENT_ID")
+            client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    except Exception as e:
+        # Fallback to environment variables
+        app.logger.warning(f"Error getting Google OAuth settings from DB: {e}")
+        client_id = os.environ.get("GOOGLE_CLIENT_ID")
+        client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
     
     if not client_id or not client_secret:
         app.logger.warning("Google OAuth not configured: missing credentials")
         return None
     
     storage = UserSessionStorage(OAuth, '_browser_session_key')
+    
+    # Get the request URL for dynamic callback URL
+    current_url = app.config.get('SERVER_NAME') or os.environ.get('REPLIT_DOMAINS', 'localhost:5000')
+    if not current_url.startswith(('http://', 'https://')):
+        if 'replit.app' in current_url:
+            current_url = f"https://{current_url}"
+        else:
+            current_url = f"http://{current_url}"
+    
+    callback_url = f"{current_url}/auth/google/authorized"
     
     google_bp = OAuth2ConsumerBlueprint(
         "google",
@@ -87,7 +112,7 @@ def setup_google_oauth():
         base_url="https://www.googleapis.com/oauth2/v1/",
         authorization_url="https://accounts.google.com/o/oauth2/auth",
         token_url="https://accounts.google.com/o/oauth2/token",
-        redirect_url="https://thetranscriptiontool.replit.app/auth/google/authorized",
+        redirect_url=callback_url,
         redirect_to="auth.google_authorized",
         storage=storage,
     )
@@ -96,14 +121,39 @@ def setup_google_oauth():
 
 # Twitter OAuth setup
 def setup_twitter_oauth():
-    client_id = os.environ.get("TWITTER_CLIENT_ID")
-    client_secret = os.environ.get("TWITTER_CLIENT_SECRET")
+    # First, try to get settings from database
+    try:
+        from models import OAuthProviderSettings
+        provider_settings = OAuthProviderSettings.query.filter_by(provider_name='twitter').first()
+        
+        if provider_settings and provider_settings.is_enabled:
+            client_id = provider_settings.client_id
+            client_secret = provider_settings.client_secret
+        else:
+            # If not enabled in DB, use environment variables
+            client_id = os.environ.get("TWITTER_CLIENT_ID")
+            client_secret = os.environ.get("TWITTER_CLIENT_SECRET")
+    except Exception as e:
+        # Fallback to environment variables
+        app.logger.warning(f"Error getting Twitter OAuth settings from DB: {e}")
+        client_id = os.environ.get("TWITTER_CLIENT_ID")
+        client_secret = os.environ.get("TWITTER_CLIENT_SECRET")
     
     if not client_id or not client_secret:
         app.logger.warning("Twitter OAuth not configured: missing credentials")
         return None
     
     storage = UserSessionStorage(OAuth, '_browser_session_key')
+    
+    # Get the request URL for dynamic callback URL
+    current_url = app.config.get('SERVER_NAME') or os.environ.get('REPLIT_DOMAINS', 'localhost:5000')
+    if not current_url.startswith(('http://', 'https://')):
+        if 'replit.app' in current_url:
+            current_url = f"https://{current_url}"
+        else:
+            current_url = f"http://{current_url}"
+    
+    callback_url = f"{current_url}/auth/twitter/authorized"
     
     twitter_bp = OAuth2ConsumerBlueprint(
         "twitter",
@@ -114,7 +164,7 @@ def setup_twitter_oauth():
         base_url="https://api.twitter.com/2/",
         authorization_url="https://twitter.com/i/oauth2/authorize",
         token_url="https://api.twitter.com/2/oauth2/token",
-        redirect_url="https://thetranscriptiontool.replit.app/auth/twitter/authorized",
+        redirect_url=callback_url,
         redirect_to="auth.twitter_authorized",
         storage=storage,
     )
@@ -123,14 +173,39 @@ def setup_twitter_oauth():
 
 # Discord OAuth setup
 def setup_discord_oauth():
-    client_id = os.environ.get("DISCORD_CLIENT_ID")
-    client_secret = os.environ.get("DISCORD_CLIENT_SECRET")
+    # First, try to get settings from database
+    try:
+        from models import OAuthProviderSettings
+        provider_settings = OAuthProviderSettings.query.filter_by(provider_name='discord').first()
+        
+        if provider_settings and provider_settings.is_enabled:
+            client_id = provider_settings.client_id
+            client_secret = provider_settings.client_secret
+        else:
+            # If not enabled in DB, use environment variables
+            client_id = os.environ.get("DISCORD_CLIENT_ID")
+            client_secret = os.environ.get("DISCORD_CLIENT_SECRET")
+    except Exception as e:
+        # Fallback to environment variables
+        app.logger.warning(f"Error getting Discord OAuth settings from DB: {e}")
+        client_id = os.environ.get("DISCORD_CLIENT_ID")
+        client_secret = os.environ.get("DISCORD_CLIENT_SECRET")
     
     if not client_id or not client_secret:
         app.logger.warning("Discord OAuth not configured: missing credentials")
         return None
     
     storage = UserSessionStorage(OAuth, '_browser_session_key')
+    
+    # Get the request URL for dynamic callback URL
+    current_url = app.config.get('SERVER_NAME') or os.environ.get('REPLIT_DOMAINS', 'localhost:5000')
+    if not current_url.startswith(('http://', 'https://')):
+        if 'replit.app' in current_url:
+            current_url = f"https://{current_url}"
+        else:
+            current_url = f"http://{current_url}"
+    
+    callback_url = f"{current_url}/auth/discord/authorized"
     
     discord_bp = OAuth2ConsumerBlueprint(
         "discord",
@@ -141,7 +216,7 @@ def setup_discord_oauth():
         base_url="https://discord.com/api/",
         authorization_url="https://discord.com/api/oauth2/authorize",
         token_url="https://discord.com/api/oauth2/token",
-        redirect_url="https://thetranscriptiontool.replit.app/auth/discord/authorized",
+        redirect_url=callback_url,
         redirect_to="auth.discord_authorized",
         storage=storage,
     )
