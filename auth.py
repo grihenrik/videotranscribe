@@ -11,12 +11,12 @@ from flask_login import LoginManager, login_user, logout_user, current_user
 from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
 from sqlalchemy.exc import NoResultFound
 
+# Import from the global app and db objects
 from app import app, db
 from models import User, OAuth
 
-# Initialize login manager
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
+# Create auth blueprint
+auth_bp = Blueprint('auth', __name__, template_folder='templates')
 
 # Create auth blueprint
 auth_bp = Blueprint('auth', __name__, template_folder='templates')
