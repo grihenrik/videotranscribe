@@ -70,5 +70,9 @@ def get_unread_notifications_count():
         ).count()
     return 0
 
-# Import and register authentication blueprint
+# Import and register blueprints
 import auth
+from admin_routes import admin_bp
+
+# Register admin blueprint
+app.register_blueprint(admin_bp)

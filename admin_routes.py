@@ -10,7 +10,7 @@ from models import User, Transcription, DailyStats, OAuthProviderSettings
 from auth import admin_required
 
 # Create admin blueprint
-admin_bp = Blueprint('admin', __name__)
+admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 @admin_bp.route('/')
 @login_required
