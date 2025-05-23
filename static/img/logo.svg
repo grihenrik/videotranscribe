@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="50" viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Speaker Icon -->
+  <path d="M35 10C35 7.23858 32.7614 5 30 5H20C17.2386 5 15 7.23858 15 10V40C15 42.7614 17.2386 45 20 45H30C32.7614 45 35 42.7614 35 40V10Z" fill="#6C757D"/>
+  <!-- Sound Waves -->
+  <path d="M40 15C40 15 45 20 45 25C45 30 40 35 40 35" stroke="#6C757D" stroke-width="3" stroke-linecap="round"/>
+  <path d="M47 10C47 10 55 17 55 25C55 33 47 40 47 40" stroke="#6C757D" stroke-width="3" stroke-linecap="round"/>
+  <!-- Text Outline -->
+  <rect x="65" y="12" width="120" height="25" rx="5" stroke="#6C757D" stroke-width="2" fill="none"/>
+  <!-- Text Lines -->
+  <line x1="75" y1="20" x2="150" y2="20" stroke="#6C757D" stroke-width="2"/>
+  <line x1="75" y1="30" x2="135" y2="30" stroke="#6C757D" stroke-width="2"/>
+  <!-- Play Button -->
+  <circle cx="25" cy="25" r="15" fill="#dc3545"/>
+  <path d="M22 18L32 25L22 32V18Z" fill="white"/>
+</svg>
