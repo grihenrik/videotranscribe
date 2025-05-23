@@ -85,8 +85,15 @@
             left: 15px;
             z-index: 1060;
             border: none;
-            background-color: transparent;
+            background-color: #444;
             cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
         .main-content-wrapper {
             transition: margin-left 0.3s;
@@ -105,7 +112,7 @@
 <body>
     <!-- Hamburger Menu Button -->
     <button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
-        <i data-feather="menu" style="color: white; stroke-width: 2;"></i>
+        <i data-feather="menu" style="color: white; stroke-width: 2.5; width: 28px; height: 28px;"></i>
     </button>
     
     <!-- Sidebar Navigation -->
