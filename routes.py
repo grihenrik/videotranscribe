@@ -78,6 +78,96 @@ def playlist():
 
 # === User Routes ===
 
+@app.route('/dashboard')
+@login_required
+@track_activity
+def dashboard():
+    """Personalized user dashboard with activity insights"""
+    user_transcriptions = Transcription.query.filter_by(user_id=current_user.id)
+    
+    # Basic statistics
+    total_transcriptions = user_transcriptions.count()
+    completed_count = user_transcriptions.filter_by(status='completed').count()
+    failed_count = user_transcriptions.filter_by(status='failed').count()
+    pending_count = user_transcriptions.filter_by(status='pending').count()
+    
+    # Success rate
+    success_rate = int((completed_count / total_transcriptions * 100) if total_transcriptions > 0 else 0)
+    
+    # Total duration processed
+    total_duration = user_transcriptions.filter_by(status='completed').with_entities(func.sum(Transcription.duration)).scalar() or 0
+    total_duration_formatted = format_duration(total_duration)
+    
+    # Recent activity (last 7 days)
+    week_ago = datetime.now() - timedelta(days=7)
+    recent_transcriptions = user_transcriptions.filter(Transcription.created_at >= week_ago).count()
+    
+    # Mode usage statistics
+    whisper_count = user_transcriptions.filter_by(mode='whisper').count()
+    captions_count = user_transcriptions.filter_by(mode='captions').count()
+    auto_count = user_transcriptions.filter_by(mode='auto').count()
+    
+    # Monthly activity (last 30 days by day)
+    thirty_days_ago = datetime.now() - timedelta(days=30)
+    daily_activity = []
+    for i in range(30):
+        day = datetime.now() - timedelta(days=i)
+        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+        
+        daily_count = user_transcriptions.filter(
+            and_(Transcription.created_at >= day_start, Transcription.created_at < day_end)
+        ).count()
+        
+        daily_activity.append({
+            'date': day_start.strftime('%Y-%m-%d'),
+            'count': daily_count
+        })
+    
+    daily_activity.reverse()  # Show oldest to newest
+    
+    # Recent transcriptions for quick access
+    recent_files = user_transcriptions.order_by(desc(Transcription.created_at)).limit(5).all()
+    
+    # Language usage statistics
+    language_stats = db.session.query(
+        Transcription.language, 
+        func.count(Transcription.id).label('count')
+    ).filter_by(user_id=current_user.id).group_by(Transcription.language).all()
+    
+    # Calculate average processing time for completed transcriptions
+    completed_transcriptions = user_transcriptions.filter_by(status='completed').all()
+    if completed_transcriptions:
+        processing_times = []
+        for trans in completed_transcriptions:
+            if trans.completed_at and trans.created_at:
+                processing_time = (trans.completed_at - trans.created_at).total_seconds()
+                processing_times.append(processing_time)
+        
+        avg_processing_time = sum(processing_times) / len(processing_times) if processing_times else 0
+        avg_processing_time_formatted = format_duration(int(avg_processing_time))
+    else:
+        avg_processing_time_formatted = "--:--"
+    
+    dashboard_data = {
+        'total_transcriptions': total_transcriptions,
+        'completed_count': completed_count,
+        'failed_count': failed_count,
+        'pending_count': pending_count,
+        'success_rate': success_rate,
+        'total_duration_formatted': total_duration_formatted,
+        'recent_transcriptions': recent_transcriptions,
+        'whisper_count': whisper_count,
+        'captions_count': captions_count,
+        'auto_count': auto_count,
+        'daily_activity': daily_activity,
+        'recent_files': recent_files,
+        'language_stats': language_stats,
+        'avg_processing_time': avg_processing_time_formatted
+    }
+    
+    return render_template('dashboard.html', **dashboard_data)
+
 @app.route('/settings')
 @login_required
 @track_activity

@@ -175,6 +175,11 @@
             <a href="/" class="nav-link">
                 <i data-feather="home"></i> {{ _('Home') }}
             </a>
+            {% if current_user.is_authenticated %}
+            <a href="/dashboard" class="nav-link">
+                <i data-feather="bar-chart-2"></i> {{ _('Dashboard') }}
+            </a>
+            {% endif %}
             <a href="/batch" class="nav-link">
                 <i data-feather="layers"></i> {{ _('Batch Processing') }}
             </a>
