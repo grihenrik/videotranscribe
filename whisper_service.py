@@ -1,266 +1,132 @@
-"""
-Simple Whisper service implementation using OpenAI's API.
-"""
 import os
-import json
 import tempfile
-import subprocess
 from openai import OpenAI
+import json
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-
-def transcribe_audio_file(file_path, language=None):
-    """
-    Transcribe an audio file using OpenAI's Whisper API.
+class WhisperService:
+    """Service for transcribing audio using OpenAI's Whisper API"""
     
-    Args:
-        file_path (str): Path to the audio file
-        language (str, optional): Language code (ISO 639-1)
+    def __init__(self):
+        self.client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    
+    def transcribe_audio(self, audio_file_path, language=None):
+        """
+        Transcribe audio file using OpenAI's Whisper API
         
-    Returns:
-        dict: Transcription in multiple formats (text, srt, vtt)
-    """
-    try:
-        # Open the audio file
-        with open(file_path, "rb") as audio_file:
-            # Call OpenAI's Whisper API
-            transcription_args = {
-                "model": "whisper-1",
-                "file": audio_file
+        Args:
+            audio_file_path: Path to the audio file
+            language: Language code (optional, Whisper will auto-detect if not provided)
+        
+        Returns:
+            Dictionary with transcription text and segments
+        """
+        try:
+            with open(audio_file_path, 'rb') as audio_file:
+                # Use Whisper API for transcription
+                response = self.client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=audio_file,
+                    language=language,
+                    response_format="verbose_json",
+                    timestamp_granularities=["segment"]
+                )
+            
+            # Extract text and segments
+            transcription_text = response.text
+            segments = []
+            
+            # Convert segments to our format
+            if hasattr(response, 'segments') and response.segments:
+                for segment in response.segments:
+                    segments.append({
+                        'start': segment.start,
+                        'end': segment.end,
+                        'text': segment.text.strip()
+                    })
+            
+            return {
+                'text': transcription_text,
+                'segments': segments,
+                'language': getattr(response, 'language', language or 'en')
             }
             
-            # Only add language parameter if it's provided and not None
-            if language:
-                transcription_args["language"] = language
-                
-            response = client.audio.transcriptions.create(**transcription_args)
-        
-        # Get the transcription text
-        transcription_text = response.text
-        
-        # Convert to SRT and VTT formats
-        srt_content = convert_to_srt(transcription_text)
-        vtt_content = convert_to_vtt(transcription_text)
-        
-        return {
-            "text": transcription_text,
-            "srt": srt_content,
-            "vtt": vtt_content
-        }
-    except Exception as e:
-        print(f"Error transcribing audio: {e}")
-        return None
-
-def download_audio_from_youtube(url, output_path=None):
-    """
-    Download audio from a YouTube video using yt-dlp.
+        except Exception as e:
+            raise Exception(f"Whisper transcription failed: {str(e)}")
     
-    Args:
-        url (str): YouTube URL
-        output_path (str, optional): Output directory
+    def format_as_txt(self, transcription_data):
+        """Format transcription as plain text"""
+        return transcription_data['text']
+    
+    def format_as_srt(self, transcription_data):
+        """Format transcription as SRT subtitles"""
+        if not transcription_data.get('segments'):
+            # If no segments, create one large segment
+            return f"1\n00:00:00,000 --> 99:99:99,999\n{transcription_data['text']}\n"
         
-    Returns:
-        str: Path to downloaded audio file
-    """
-    try:
-        # Create a temporary directory if no output path provided
-        if output_path is None:
-            output_dir = tempfile.mkdtemp()
-        else:
-            output_dir = output_path
+        srt_content = ""
+        for i, segment in enumerate(transcription_data['segments'], 1):
+            start_time = self._seconds_to_srt_time(segment['start'])
+            end_time = self._seconds_to_srt_time(segment['end'])
             
-        # Prepare the output template
-        output_template = os.path.join(output_dir, "%(id)s.%(ext)s")
+            srt_content += f"{i}\n{start_time} --> {end_time}\n{segment['text']}\n\n"
         
-        # Set up yt-dlp options for audio extraction
-        cmd = [
-            "yt-dlp",
-            "--extract-audio",
-            "--audio-format", "mp3",
-            "--audio-quality", "0",  # Best quality
-            "--output", output_template,
-            "--no-playlist",
-            url
-        ]
-        
-        # Run the command
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        
-        if result.returncode != 0:
-            raise Exception(f"yt-dlp failed: {result.stderr}")
-        
-        # Find the downloaded file
-        for file in os.listdir(output_dir):
-            if file.endswith(".mp3"):
-                return os.path.join(output_dir, file)
-        
-        raise Exception("No audio file found after download")
-    except Exception as e:
-        print(f"Error downloading audio: {e}")
-        return None
-        
-def extract_videos_from_playlist(playlist_url):
-    """
-    Extract video URLs and titles from a YouTube playlist.
+        return srt_content
     
-    Args:
-        playlist_url (str): YouTube playlist URL
+    def format_as_vtt(self, transcription_data):
+        """Format transcription as WebVTT subtitles"""
+        vtt_content = "WEBVTT\n\n"
         
-    Returns:
-        dict: Dictionary with playlist info, video URLs and titles
-    """
-    try:
-        # Create a temporary directory
-        temp_dir = tempfile.mkdtemp()
+        if not transcription_data.get('segments'):
+            # If no segments, create one large segment
+            vtt_content += "00:00:00.000 --> 99:99:99.999\n"
+            vtt_content += f"{transcription_data['text']}\n"
+            return vtt_content
+        
+        for segment in transcription_data['segments']:
+            start_time = self._seconds_to_vtt_time(segment['start'])
+            end_time = self._seconds_to_vtt_time(segment['end'])
             
-        # First get the playlist title
-        title_cmd = [
-            "yt-dlp",
-            "--flat-playlist",
-            "--print", "%(playlist_title)s",
-            "--playlist-items", "1",
-            playlist_url
-        ]
+            vtt_content += f"{start_time} --> {end_time}\n{segment['text']}\n\n"
         
-        title_result = subprocess.run(title_cmd, capture_output=True, text=True)
-        playlist_title = title_result.stdout.strip() or "YouTube Playlist"
+        return vtt_content
+    
+    def _seconds_to_srt_time(self, seconds):
+        """Convert seconds to SRT time format (HH:MM:SS,mmm)"""
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        milliseconds = int((seconds % 1) * 1000)
         
-        # Get video IDs, titles, and URLs
-        info_cmd = [
-            "yt-dlp",
-            "--flat-playlist",
-            "--print", "%(id)s:%(title)s",
-            playlist_url
-        ]
+        return f"{hours:02d}:{minutes:02d}:{secs:02d},{milliseconds:03d}"
+    
+    def _seconds_to_vtt_time(self, seconds):
+        """Convert seconds to VTT time format (HH:MM:SS.mmm)"""
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        milliseconds = int((seconds % 1) * 1000)
         
-        info_result = subprocess.run(info_cmd, capture_output=True, text=True)
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}.{milliseconds:03d}"
+    
+    def process_captions_data(self, captions_data):
+        """Process YouTube captions data into our standard format"""
+        if not captions_data:
+            return None
         
-        if info_result.returncode != 0:
-            raise Exception(f"yt-dlp failed: {info_result.stderr}")
+        # Combine all caption text
+        full_text = " ".join([caption['text'] for caption in captions_data])
         
-        # Parse the output to get video IDs and titles
-        videos = []
-        video_lines = info_result.stdout.strip().split('\n')
-        
-        for line in video_lines:
-            if ':' in line:
-                parts = line.split(':', 1)  # Split only on first colon
-                video_id = parts[0].strip()
-                video_title = parts[1].strip()
-                
-                if video_id:
-                    videos.append({
-                        "id": video_id,
-                        "title": video_title,
-                        "url": f"https://www.youtube.com/watch?v={video_id}"
-                    })
+        # Convert to our segment format
+        segments = []
+        for caption in captions_data:
+            segments.append({
+                'start': caption['start'],
+                'end': caption['end'],
+                'text': caption['text']
+            })
         
         return {
-            "title": playlist_title,
-            "videos": videos,
-            "count": len(videos)
+            'text': full_text,
+            'segments': segments,
+            'language': 'en'  # Default, could be detected
         }
-    except Exception as e:
-        print(f"Error extracting playlist videos: {e}")
-        return {
-            "title": "YouTube Playlist",
-            "videos": [],
-            "count": 0
-        }
-
-def convert_to_srt(text, chunk_duration=5):
-    """
-    Convert plain text to SRT format.
-    
-    Args:
-        text (str): Plain text transcription
-        chunk_duration (int): Duration of each subtitle chunk in seconds
-        
-    Returns:
-        str: SRT formatted text
-    """
-    # Split text into chunks (simple implementation)
-    words = text.split()
-    chunks = []
-    current_chunk = []
-    
-    for word in words:
-        current_chunk.append(word)
-        if len(current_chunk) >= 10:  # ~10 words per chunk
-            chunks.append(" ".join(current_chunk))
-            current_chunk = []
-    
-    if current_chunk:
-        chunks.append(" ".join(current_chunk))
-    
-    # Generate SRT
-    srt = ""
-    for i, chunk in enumerate(chunks):
-        start_time = i * chunk_duration
-        end_time = (i + 1) * chunk_duration
-        
-        # Format start and end times (HH:MM:SS,mmm)
-        start_formatted = format_time_srt(start_time)
-        end_formatted = format_time_srt(end_time)
-        
-        srt += f"{i + 1}\n{start_formatted} --> {end_formatted}\n{chunk}\n\n"
-    
-    return srt
-
-def convert_to_vtt(text, chunk_duration=5):
-    """
-    Convert plain text to WebVTT format.
-    
-    Args:
-        text (str): Plain text transcription
-        chunk_duration (int): Duration of each subtitle chunk in seconds
-        
-    Returns:
-        str: WebVTT formatted text
-    """
-    # Start with WebVTT header
-    vtt = "WEBVTT\n\n"
-    
-    # Split text into chunks (simple implementation)
-    words = text.split()
-    chunks = []
-    current_chunk = []
-    
-    for word in words:
-        current_chunk.append(word)
-        if len(current_chunk) >= 10:  # ~10 words per chunk
-            chunks.append(" ".join(current_chunk))
-            current_chunk = []
-    
-    if current_chunk:
-        chunks.append(" ".join(current_chunk))
-    
-    # Generate VTT cues
-    for i, chunk in enumerate(chunks):
-        start_time = i * chunk_duration
-        end_time = (i + 1) * chunk_duration
-        
-        # Format start and end times (HH:MM:SS.mmm)
-        start_formatted = format_time_vtt(start_time)
-        end_formatted = format_time_vtt(end_time)
-        
-        vtt += f"{start_formatted} --> {end_formatted}\n{chunk}\n\n"
-    
-    return vtt
-
-def format_time_srt(seconds):
-    """Format seconds to SRT timestamp (HH:MM:SS,mmm)"""
-    hours = int(seconds / 3600)
-    minutes = int((seconds % 3600) / 60)
-    seconds = int(seconds % 60)
-    milliseconds = int((seconds - int(seconds)) * 1000)
-    return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds:03d}"
-
-def format_time_vtt(seconds):
-    """Format seconds to WebVTT timestamp (HH:MM:SS.mmm)"""
-    hours = int(seconds / 3600)
-    minutes = int((seconds % 3600) / 60)
-    seconds = int(seconds % 60)
-    milliseconds = int((seconds - int(seconds)) * 1000)
-    return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
