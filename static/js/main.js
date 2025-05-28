@@ -38,7 +38,7 @@ function initTranscriptionForm() {
         
         try {
             // Submit transcription request
-            const response = await fetch('/api/transcribe', {
+            const response = await fetch('/transcribe', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -89,7 +89,7 @@ function initTranscriptionForm() {
     async function pollJobStatus(jobId) {
         let interval = setInterval(async () => {
             try {
-                const response = await fetch(`/api/job/${jobId}/status`);
+                const response = await fetch(`/status/${jobId}`);
                 
                 if (!response.ok) {
                     throw new Error('Failed to get job status');
