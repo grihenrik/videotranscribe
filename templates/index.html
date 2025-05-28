@@ -119,12 +119,15 @@
                     <p class="text-muted mb-0">This may take a few minutes depending on the video length.</p>
                     <p class="text-muted">Please do not close this page.</p>
                     
-                    <!-- Manual download access button -->
-                    <div class="mt-4">
-                        <button id="showDownloadsBtn" class="btn btn-success btn-lg" onclick="forceShowDownloads()">
-                            <i data-feather="download"></i> Access My Downloads
-                        </button>
-                        <p class="text-muted mt-2 small">Click here if transcription seems complete but downloads aren't showing</p>
+                    <!-- Direct download links -->
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6 class="text-dark">Downloads Ready? Try these links:</h6>
+                        <div class="d-flex gap-2 justify-content-center flex-wrap">
+                            <a href="#" id="directTxtLink" class="btn btn-outline-primary btn-sm">📄 TXT</a>
+                            <a href="#" id="directSrtLink" class="btn btn-outline-primary btn-sm">🎬 SRT</a>
+                            <a href="#" id="directVttLink" class="btn btn-outline-primary btn-sm">🌐 VTT</a>
+                        </div>
+                        <p class="text-muted mt-2 mb-0 small">Click above if your transcription is ready</p>
                     </div>
                 </div>
             </div>
