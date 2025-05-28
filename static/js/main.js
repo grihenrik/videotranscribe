@@ -96,6 +96,7 @@ function initTranscriptionForm() {
                 }
                 
                 const data = await response.json();
+                console.log('Status response:', data); // Debug log
                 
                 // Update progress bar
                 const progress = data.progress || data.percent || 100;
@@ -105,6 +106,7 @@ function initTranscriptionForm() {
                 
                 // Update status badge and handle completion
                 if (data.status === 'completed' || data.status === 'complete' || progress >= 100) {
+                    console.log('Transcription completed, showing downloads'); // Debug log
                     jobStatusBadge.textContent = 'Complete';
                     jobStatusBadge.className = 'badge bg-success';
                     
@@ -173,5 +175,28 @@ function initTranscriptionForm() {
                 submitSpinner.classList.add('d-none');
             }
         }, 2000); // Poll every 2 seconds
+        
+        // Show manual download button after 15 seconds
+        setTimeout(() => {
+            const showBtn = document.getElementById('showDownloadsBtn');
+            if (showBtn) {
+                showBtn.style.display = 'inline-block';
+            }
+        }, 15000);
+    }
+}
+
+// Function to manually show downloads when progress bar gets stuck
+function forceShowDownloads() {
+    const currentJobId = window.currentJobId;
+    if (currentJobId) {
+        // Hide progress and show downloads
+        document.getElementById('processingSection').classList.add('d-none');
+        document.getElementById('downloadSection').classList.remove('d-none');
+        
+        // Set download links
+        document.getElementById('downloadTxt').href = `/download/${currentJobId}?format=txt`;
+        document.getElementById('downloadSrt').href = `/download/${currentJobId}?format=srt`;
+        document.getElementById('downloadVtt').href = `/download/${currentJobId}?format=vtt`;
     }
 }
