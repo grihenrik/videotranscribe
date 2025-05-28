@@ -57,10 +57,7 @@ function initTranscriptionForm() {
             const data = await response.json();
             const jobId = data.job_id;
             
-            // Set direct download links immediately when job starts
-            document.getElementById('directTxtLink').href = `/download/${jobId}?format=txt`;
-            document.getElementById('directSrtLink').href = `/download/${jobId}?format=srt`;
-            document.getElementById('directVttLink').href = `/download/${jobId}?format=vtt`;
+            // Keep download buttons disabled initially - they'll be enabled when transcription completes
             
             // Store job ID globally and track start time
             window.currentJobId = jobId;
@@ -143,16 +140,40 @@ function initTranscriptionForm() {
                 const shouldShowDownloads = data.status === 'completed' || data.status === 'complete' || progress >= 100 || timeSinceStart > 25000;
                 
                 if (shouldShowDownloads) {
-                    console.log('Transcription completed, showing downloads'); // Debug log
+                    console.log('Transcription completed, enabling downloads'); // Debug log
                     jobStatusBadge.textContent = 'Complete';
                     jobStatusBadge.className = 'badge bg-success';
+                    
+                    // Update download status section to show completion
+                    const downloadStatus = document.getElementById('downloadStatus');
+                    downloadStatus.className = 'mt-4 p-4 bg-success text-white rounded';
+                    downloadStatus.querySelector('h6').innerHTML = '🎉 Downloads Ready!';
+                    downloadStatus.querySelector('p').textContent = 'Your transcription is complete! Click any button to download.';
+                    
+                    // Enable download buttons and set correct links
+                    const jobId = window.currentJobId;
+                    const txtBtn = document.getElementById('directTxtLink');
+                    const srtBtn = document.getElementById('directSrtLink');
+                    const vttBtn = document.getElementById('directVttLink');
+                    
+                    // Convert buttons to working download links
+                    txtBtn.disabled = false;
+                    txtBtn.className = 'btn btn-light btn-lg';
+                    txtBtn.onclick = () => window.open(`/download/${jobId}?format=txt`, '_blank');
+                    
+                    srtBtn.disabled = false;
+                    srtBtn.className = 'btn btn-light btn-lg';
+                    srtBtn.onclick = () => window.open(`/download/${jobId}?format=srt`, '_blank');
+                    
+                    vttBtn.disabled = false;
+                    vttBtn.className = 'btn btn-light btn-lg';
+                    vttBtn.onclick = () => window.open(`/download/${jobId}?format=vtt`, '_blank');
                     
                     // Hide progress section and show download section
                     progressSection.classList.add('d-none');
                     downloadSection.classList.remove('d-none');
                     
-                    // Update download links
-                    const jobId = window.currentJobId;
+                    // Update main download links too
                     document.getElementById('downloadTxt').href = `/download/${jobId}?format=txt`;
                     document.getElementById('downloadSrt').href = `/download/${jobId}?format=srt`;
                     document.getElementById('downloadVtt').href = `/download/${jobId}?format=vtt`;
