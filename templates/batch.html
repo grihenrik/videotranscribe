@@ -1,0 +1,280 @@
+{% extends "layout.html" %}
+
+{% block title %}Batch Processing{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">
+        <i data-feather="layers" class="me-2"></i>
+        Batch Processing
+    </h1>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Process Multiple YouTube Videos</h5>
+                </div>
+                <div class="card-body">
+                    <form id="batchForm">
+                        <div class="mb-3">
+                            <label for="video_urls" class="form-label">YouTube Video URLs</label>
+                            <textarea class="form-control" id="video_urls" name="video_urls" rows="8" 
+                                      placeholder="Enter one YouTube URL per line:&#10;https://www.youtube.com/watch?v=video1&#10;https://www.youtube.com/watch?v=video2&#10;https://www.youtube.com/watch?v=video3" required></textarea>
+                            <div class="form-text">Enter one YouTube URL per line. You can process up to 20 videos at once.</div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="mode" class="form-label">Processing Mode</label>
+                                <select class="form-select" id="mode" name="mode">
+                                    <option value="auto">Auto (Captions first, then Whisper)</option>
+                                    <option value="captions">Captions Only</option>
+                                    <option value="whisper">Whisper AI Only</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="lang" class="form-label">Language</label>
+                                <select class="form-select" id="lang" name="lang">
+                                    <option value="auto">Auto-detect</option>
+                                    <option value="en">English</option>
+                                    <option value="es">Spanish</option>
+                                    <option value="fr">French</option>
+                                    <option value="de">German</option>
+                                    <option value="it">Italian</option>
+                                    <option value="pt">Portuguese</option>
+                                    <option value="ru">Russian</option>
+                                    <option value="ja">Japanese</option>
+                                    <option value="ko">Korean</option>
+                                    <option value="zh">Chinese</option>
+                                    <option value="ar">Arabic</option>
+                                    <option value="hi">Hindi</option>
+                                    <option value="fi">Finnish</option>
+                                    <option value="sv">Swedish</option>
+                                    <option value="no">Norwegian</option>
+                                    <option value="da">Danish</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i data-feather="play" class="me-2"></i>
+                            Start Batch Processing
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">How Batch Processing Works</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-start mb-3">
+                        <i data-feather="list" class="me-2 mt-1 text-primary"></i>
+                        <div>
+                            <strong>Queue Videos</strong>
+                            <p class="mb-0 small text-muted">All videos are added to the processing queue</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start mb-3">
+                        <i data-feather="cpu" class="me-2 mt-1 text-success"></i>
+                        <div>
+                            <strong>Process Sequentially</strong>
+                            <p class="mb-0 small text-muted">Each video is transcribed one by one</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start mb-3">
+                        <i data-feather="archive" class="me-2 mt-1 text-info"></i>
+                        <div>
+                            <strong>ZIP Download</strong>
+                            <p class="mb-0 small text-muted">All results are packaged for easy download</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Tips for Best Results</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i data-feather="check" class="me-2 text-success" style="width: 16px; height: 16px;"></i>
+                            <small>Use one URL per line</small>
+                        </li>
+                        <li class="mb-2">
+                            <i data-feather="check" class="me-2 text-success" style="width: 16px; height: 16px;"></i>
+                            <small>Check URLs are valid YouTube links</small>
+                        </li>
+                        <li class="mb-2">
+                            <i data-feather="check" class="me-2 text-success" style="width: 16px; height: 16px;"></i>
+                            <small>Choose Auto mode for best accuracy</small>
+                        </li>
+                        <li>
+                            <i data-feather="check" class="me-2 text-success" style="width: 16px; height: 16px;"></i>
+                            <small>Wait for processing to complete</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Section -->
+    <div id="progressSection" class="mt-4" style="display: none;">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Processing Batch</h5>
+                <span id="progressText">Preparing...</span>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-3">
+                    <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <div id="currentVideo" class="text-muted"></div>
+                <div id="videosList" class="mt-3">
+                    <div class="row" id="videosGrid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsSection" class="mt-4" style="display: none;">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="check-circle" class="me-2 text-success"></i>
+                    Batch Processing Complete
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">Your batch processing is complete. All transcriptions are ready for download.</p>
+                <div id="downloadLinks" class="d-grid gap-2 d-md-flex"></div>
+                <div id="individualDownloads" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('batchForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const progressSection = document.getElementById('progressSection');
+    const resultsSection = document.getElementById('resultsSection');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const currentVideo = document.getElementById('currentVideo');
+    const videosGrid = document.getElementById('videosGrid');
+    
+    // Show progress section
+    progressSection.style.display = 'block';
+    resultsSection.style.display = 'none';
+    
+    // Parse URLs
+    const urls = formData.get('video_urls').split('\n').filter(url => url.trim());
+    
+    // Initialize videos grid
+    videosGrid.innerHTML = '';
+    urls.forEach((url, index) => {
+        const videoCard = document.createElement('div');
+        videoCard.className = 'col-md-6 mb-2';
+        videoCard.innerHTML = `
+            <div class="card border-0 bg-light">
+                <div class="card-body p-2">
+                    <div class="d-flex align-items-center">
+                        <div id="status-${index}" class="me-2">
+                            <i data-feather="clock" class="text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <small class="text-truncate d-block">Video ${index + 1}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        videosGrid.appendChild(videoCard);
+    });
+    feather.replace();
+    
+    try {
+        const response = await fetch('/transcribe', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.job_id) {
+            // Connect to WebSocket for real-time updates
+            const ws = new WebSocket(`ws://${window.location.host}/ws/${result.job_id}`);
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                if (data.progress !== undefined) {
+                    progressBar.style.width = data.progress + '%';
+                    progressBar.textContent = Math.round(data.progress) + '%';
+                }
+                
+                if (data.status) {
+                    progressText.textContent = data.status;
+                }
+                
+                if (data.current_video) {
+                    currentVideo.textContent = `Processing: ${data.current_video}`;
+                }
+                
+                if (data.current_index !== undefined) {
+                    // Update video status
+                    const statusEl = document.getElementById(`status-${data.current_index}`);
+                    if (statusEl) {
+                        if (data.video_status === 'processing') {
+                            statusEl.innerHTML = '<i data-feather="loader" class="text-primary"></i>';
+                        } else if (data.video_status === 'completed') {
+                            statusEl.innerHTML = '<i data-feather="check" class="text-success"></i>';
+                        } else if (data.video_status === 'failed') {
+                            statusEl.innerHTML = '<i data-feather="x" class="text-danger"></i>';
+                        }
+                        feather.replace();
+                    }
+                }
+                
+                if (data.status === 'completed') {
+                    progressSection.style.display = 'none';
+                    resultsSection.style.display = 'block';
+                    
+                    // Show download links
+                    const downloadLinks = document.getElementById('downloadLinks');
+                    downloadLinks.innerHTML = `
+                        <a href="/download/${result.job_id}?format=zip" class="btn btn-primary">
+                            <i data-feather="download" class="me-2"></i>Download All (ZIP)
+                        </a>
+                    `;
+                    feather.replace();
+                }
+                
+                if (data.status === 'failed') {
+                    progressText.textContent = 'Processing failed: ' + (data.error || 'Unknown error');
+                    progressBar.classList.add('bg-danger');
+                }
+            };
+            
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                progressText.textContent = 'Connection error. Please refresh and try again.';
+            };
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        progressText.textContent = 'Error submitting batch. Please try again.';
+    }
+});
+</script>
+{% endblock %}
