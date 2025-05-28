@@ -687,6 +687,10 @@ def transcribe():
         mode = data.get('mode', 'auto')
         lang = data.get('lang', 'en')
         
+        # Validate required parameters
+        if not url.strip():
+            return jsonify({'error': 'URL cannot be empty'}), 400
+            
         # Generate a job ID
         job_id = f"job_{int(time.time())}_{abs(hash(url)) % 10000}"
         
