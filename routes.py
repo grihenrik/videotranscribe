@@ -770,30 +770,35 @@ def track_transcription(video_id, video_title, url, mode, lang, user_id=None, st
     
     return transcription.id
 
-def update_transcription_status(transcription_id, status, error=None):
-    """Update the status of a transcription"""
-    transcription = Transcription.query.get(transcription_id)
-    if not transcription:
+def update_transcription_status(video_id, status, error=None):
+    """Update the status of a transcription by video_id"""
+    try:
+        transcription = Transcription.query.filter_by(video_id=video_id).first()
+        if not transcription:
+            return False
+        
+        transcription.status = status
+        if status == 'completed':
+            transcription.completed_at = datetime.now()
+        
+        db.session.commit()
+        
+        # If the transcription is complete and the user has notifications enabled, send a notification
+        if status == 'completed' and transcription.user_id:
+            user = User.query.get(transcription.user_id)
+            if user and user.notification_site:
+                notification = Notification(
+                    user_id=transcription.user_id,
+                    message=f"Transcription for '{transcription.video_title}' is now complete!"
+                )
+                db.session.add(notification)
+                db.session.commit()
+        
+        return True
+    except Exception as e:
+        db.session.rollback()
+        print(f"Database error updating status for {video_id}: {e}")
         return False
-    
-    transcription.status = status
-    if status == 'completed':
-        transcription.completed_at = datetime.now()
-    
-    db.session.commit()
-    
-    # If the transcription is complete and the user has notifications enabled, send a notification
-    if status == 'completed' and transcription.user_id:
-        user = User.query.get(transcription.user_id)
-        if user and user.notification_site:
-            notification = Notification(
-                user_id=transcription.user_id,
-                message=f"Transcription for '{transcription.video_title}' is now complete!"
-            )
-            db.session.add(notification)
-            db.session.commit()
-    
-    return True
 
 # Function to update daily stats
 def update_daily_stats():
