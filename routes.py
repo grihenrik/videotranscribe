@@ -935,6 +935,7 @@ def transcribe():
     return jsonify({'error': 'No valid input provided'}), 400
 
 @app.route('/status/<job_id>')
+@app.route('/job-status/<job_id>')
 def job_status(job_id):
     """Get real job status from processing queue"""
     # Check if we have a real job status
