@@ -98,12 +98,13 @@ function initTranscriptionForm() {
                 const data = await response.json();
                 
                 // Update progress bar
-                progressBar.style.width = `${data.percent}%`;
-                progressBar.textContent = `${data.percent}%`;
-                progressBar.setAttribute('aria-valuenow', data.percent);
+                const progress = data.progress || data.percent || 100;
+                progressBar.style.width = `${progress}%`;
+                progressBar.textContent = `${progress}%`;
+                progressBar.setAttribute('aria-valuenow', progress);
                 
                 // Update status badge
-                if (data.status === 'complete') {
+                if (data.status === 'completed' || data.status === 'complete') {
                     jobStatusBadge.textContent = 'Complete';
                     jobStatusBadge.className = 'badge bg-success';
                     
