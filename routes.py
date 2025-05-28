@@ -671,3 +671,111 @@ def update_daily_stats():
     db.session.commit()
     
     return daily_stats
+
+@app.route('/transcribe', methods=['POST'])
+def transcribe():
+    """API endpoint for transcription"""
+    # Check if we got JSON or form data
+    if request.is_json:
+        data = request.json
+    else:
+        data = request.form
+    
+    # Handle single video
+    url = data.get('url')
+    if url:
+        mode = data.get('mode', 'auto')
+        lang = data.get('lang', 'en')
+        
+        # Generate a job ID
+        job_id = f"job_{int(time.time())}_{abs(hash(url)) % 10000}"
+        
+        # Extract video ID from URL
+        import re
+        video_id_match = re.search(r'(?:v=|\/)([0-9A-Za-z_-]{11}).*', url)
+        if not video_id_match:
+            return jsonify({'error': 'Invalid YouTube URL'}), 400
+        
+        video_id = video_id_match.group(1)
+        video_title = f"YouTube Video ({video_id})"
+        
+        # For testing, return success immediately
+        return jsonify({
+            'job_id': job_id,
+            'status': 'completed',
+            'video_id': video_id,
+            'video_title': video_title,
+            'message': 'Transcription completed successfully (test mode)'
+        })
+    
+    # Handle batch processing
+    video_urls = data.get('video_urls')
+    if video_urls:
+        urls = [url.strip() for url in video_urls.split('\n') if url.strip()]
+        job_id = f"batch_{int(time.time())}_{len(urls)}"
+        
+        return jsonify({
+            'job_id': job_id,
+            'status': 'completed',
+            'video_count': len(urls),
+            'message': f'Batch processing completed for {len(urls)} videos (test mode)'
+        })
+    
+    # Handle playlist processing
+    playlist_url = data.get('playlist_url')
+    if playlist_url:
+        job_id = f"playlist_{int(time.time())}"
+        
+        return jsonify({
+            'job_id': job_id,
+            'status': 'completed',
+            'message': 'Playlist processing completed (test mode)'
+        })
+    
+    return jsonify({'error': 'No valid input provided'}), 400
+
+@app.route('/status/<job_id>')
+def job_status(job_id):
+    """Get job status"""
+    # For testing, always return completed status
+    return jsonify({
+        'status': 'completed',
+        'progress': 100,
+        'message': 'Job completed successfully'
+    })
+
+@app.route('/download/<job_id>')
+def download(job_id):
+    """Download transcription endpoint"""
+    format_type = request.args.get('format', 'txt')
+    
+    # For testing, return sample content
+    sample_content = {
+        'txt': "This is a sample transcription text for testing purposes.",
+        'srt': """1
+00:00:00,000 --> 00:00:05,000
+This is a sample transcription
+
+2
+00:00:05,000 --> 00:00:10,000
+for testing purposes.""",
+        'vtt': """WEBVTT
+
+00:00:00.000 --> 00:00:05.000
+This is a sample transcription
+
+00:00:05.000 --> 00:00:10.000
+for testing purposes."""
+    }
+    
+    content = sample_content.get(format_type, sample_content['txt'])
+    
+    # Create response with appropriate headers
+    response = app.response_class(
+        content,
+        mimetype='text/plain',
+        headers={
+            'Content-Disposition': f'attachment; filename=transcription_{job_id}.{format_type}'
+        }
+    )
+    return response
