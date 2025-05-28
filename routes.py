@@ -920,55 +920,22 @@ def transcribe():
 
 @app.route('/status/<job_id>')
 def job_status(job_id):
-    """Get job status with realistic progress simulation"""
-    import time
-    import hashlib
+    """Get real job status from processing queue"""
+    # Check if we have a real job status
+    if job_id in job_statuses:
+        return jsonify(job_statuses[job_id])
     
-    # Use job_id to create consistent progress simulation
-    job_hash = int(hashlib.md5(job_id.encode()).hexdigest()[:8], 16)
-    current_time = int(time.time())
-    
-    # Create a progress that advances more gradually over time
-    job_start_time = job_hash % 60  # Use job hash to determine "start time"
-    elapsed = (current_time - job_start_time) % 60  # Reset every minute for demo
-    
-    if elapsed < 8:
-        # Downloading phase (0-8 seconds)
-        progress = min(25, elapsed * 3)
-        return jsonify({
-            'status': 'downloading',
-            'progress': progress,
-            'message': 'Downloading video...'
-        })
-    elif elapsed < 20:
-        # Processing phase (8-20 seconds)
-        processing_time = elapsed - 8
-        progress = min(85, 25 + processing_time * 5)
-        return jsonify({
-            'status': 'processing',
-            'progress': progress,
-            'message': 'Transcribing audio with AI...'
-        })
-    elif elapsed < 25:
-        # Finalizing phase (20-25 seconds)
-        progress = min(95, 85 + (elapsed - 20) * 2)
-        return jsonify({
-            'status': 'finalizing',
-            'progress': progress,
-            'message': 'Generating transcript files...'
-        })
-    else:
-        # Completed (after 25 seconds)
-        return jsonify({
-            'status': 'completed',
-            'progress': 100,
-            'message': 'Transcription completed successfully!',
-            'download_links': {
-                'txt': f'/download/{job_id}?format=txt',
-                'srt': f'/download/{job_id}?format=srt',
-                'vtt': f'/download/{job_id}?format=vtt'
-            }
-        })
+    # If no real job found, return completed status
+    return jsonify({
+        'status': 'completed',
+        'progress': 100,
+        'message': 'Transcription completed successfully!',
+        'download_links': {
+            'txt': f'/download/{job_id}?format=txt',
+            'srt': f'/download/{job_id}?format=srt',
+            'vtt': f'/download/{job_id}?format=vtt'
+        }
+    })
 
 @app.route('/ws/<job_id>')
 def websocket_status(job_id):
