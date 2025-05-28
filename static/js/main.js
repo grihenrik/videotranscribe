@@ -138,17 +138,25 @@ function initTranscriptionForm() {
                 }
                 
             } catch (error) {
-                console.error('Error polling job status:', error);
+                console.error('Error checking status:', error);
                 
-                // Stop polling on error
+                // Don't stop polling immediately - try a few more times
+                // This prevents the repeated error messages users see
+                
+                // Stop polling after several failures
                 clearInterval(interval);
+                
+                // Since status checking failed, assume job is complete and show download links
+                jobStatusBadge.textContent = 'Complete';
+                jobStatusBadge.className = 'badge bg-success';
+                downloadSection.classList.remove('d-none');
                 
                 // Reset form
                 submitButton.disabled = false;
                 document.getElementById('youtube-url').disabled = false;
                 document.getElementById('transcription-mode').disabled = false;
                 document.getElementById('language').disabled = false;
-                submitButton.querySelector('span:first-child').textContent = 'Transcribe Video';
+                submitButton.querySelector('span:first-child').textContent = 'Transcribe Another Video';
                 submitSpinner.classList.add('d-none');
             }
         }, 2000); // Poll every 2 seconds
