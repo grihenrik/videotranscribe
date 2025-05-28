@@ -2,6 +2,13 @@ import os
 import time
 import uuid
 import datetime
+import json
+import hashlib
+import threading
+import queue
+import tempfile
+import zipfile
+import io
 from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc, and_
@@ -12,6 +19,19 @@ from flask_login import current_user, login_required
 from flask_app import app, db
 from models import User, Transcription, Notification, DailyStats
 from auth import admin_required
+from youtube_service import YouTubeService
+from whisper_service import WhisperService
+
+# Initialize services
+youtube_service = YouTubeService()
+whisper_service = WhisperService()
+
+# Global job tracking and queue system
+job_queue = queue.Queue()
+job_statuses = {}
+transcription_cache = {}  # Cache completed transcriptions
+worker_thread = None
+worker_lock = threading.Lock()
 
 # Utility functions
 def format_duration(seconds):
@@ -805,26 +825,24 @@ def download(job_id):
     """Download transcription endpoint"""
     format_type = request.args.get('format', 'txt')
     
-    # For testing, return sample content
-    sample_content = {
-        'txt': "This is a sample transcription text for testing purposes.",
-        'srt': """1
-00:00:00,000 --> 00:00:05,000
-This is a sample transcription
-
-2
-00:00:05,000 --> 00:00:10,000
-for testing purposes.""",
-        'vtt': """WEBVTT
-
-00:00:00.000 --> 00:00:05.000
-This is a sample transcription
-
-00:00:05.000 --> 00:00:10.000
-for testing purposes."""
-    }
+    # Get transcription data from cache
+    cached_transcription = transcription_cache.get(job_id)
     
-    content = sample_content.get(format_type, sample_content['txt'])
+    if not cached_transcription:
+        return jsonify({'error': 'Transcription not found or expired'}), 404
+    
+    transcription_data = cached_transcription['data']
+    video_title = cached_transcription.get('video_title', 'transcription')
+    
+    # Generate content based on format
+    if format_type == 'txt':
+        content = whisper_service.format_as_txt(transcription_data)
+    elif format_type == 'srt':
+        content = whisper_service.format_as_srt(transcription_data)
+    elif format_type == 'vtt':
+        content = whisper_service.format_as_vtt(transcription_data)
+    else:
+        content = whisper_service.format_as_txt(transcription_data)
     
     # Create response with appropriate headers
     response = app.response_class(
