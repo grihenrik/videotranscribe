@@ -103,13 +103,25 @@ function initTranscriptionForm() {
                 progressBar.textContent = `${progress}%`;
                 progressBar.setAttribute('aria-valuenow', progress);
                 
-                // Update status badge
-                if (data.status === 'completed' || data.status === 'complete') {
+                // Update status badge and handle completion
+                if (data.status === 'completed' || data.status === 'complete' || progress >= 100) {
                     jobStatusBadge.textContent = 'Complete';
                     jobStatusBadge.className = 'badge bg-success';
                     
-                    // Show download section
+                    // Hide progress section and show download section
+                    progressSection.classList.add('d-none');
                     downloadSection.classList.remove('d-none');
+                    
+                    // Update download links if available
+                    if (data.download_links) {
+                        const txtLink = document.querySelector('a[href*="format=txt"]');
+                        const srtLink = document.querySelector('a[href*="format=srt"]');
+                        const vttLink = document.querySelector('a[href*="format=vtt"]');
+                        
+                        if (txtLink) txtLink.href = data.download_links.txt;
+                        if (srtLink) srtLink.href = data.download_links.srt;
+                        if (vttLink) vttLink.href = data.download_links.vtt;
+                    }
                     
                     // Reset form
                     submitButton.disabled = false;
@@ -121,6 +133,7 @@ function initTranscriptionForm() {
                     
                     // Stop polling
                     clearInterval(interval);
+                    return; // Exit polling function
                 } else if (data.status === 'error') {
                     jobStatusBadge.textContent = 'Error';
                     jobStatusBadge.className = 'badge bg-danger';
