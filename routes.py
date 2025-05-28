@@ -964,6 +964,11 @@ def websocket_status(job_id):
         'message': 'Job completed successfully'
     })
 
+@app.route('/downloads')
+def downloads_page():
+    """Simple downloads page with direct links"""
+    return render_template('simple_download.html')
+
 @app.route('/download/<job_id>')
 def download(job_id):
     """Download transcription endpoint"""
