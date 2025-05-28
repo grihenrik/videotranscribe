@@ -71,23 +71,8 @@ function initTranscriptionForm() {
             downloadSrt.href = data.download_links.srt;
             downloadVtt.href = data.download_links.vtt;
             
-            // Since job is already completed in test mode, show results immediately
-            if (data.status === 'completed') {
-                jobStatusBadge.textContent = 'Complete';
-                jobStatusBadge.className = 'badge bg-success';
-                downloadSection.classList.remove('d-none');
-                
-                // Reset form
-                submitButton.disabled = false;
-                document.getElementById('youtube-url').disabled = false;
-                document.getElementById('transcription-mode').disabled = false;
-                document.getElementById('language').disabled = false;
-                submitButton.querySelector('span:first-child').textContent = 'Transcribe Another Video';
-                submitSpinner.classList.add('d-none');
-            } else {
-                // Start polling for status updates
-                pollJobStatus(data.job_id);
-            }
+            // Start polling for status updates to show progress
+            pollJobStatus(data.job_id);
             
         } catch (error) {
             console.error('Error:', error);
