@@ -239,15 +239,44 @@ function initTranscriptionForm() {
     }
 }
 
-// Function to manually show downloads when progress bar gets stuck
-function forceShowDownloads() {
+// Function to manually enable downloads
+function enableDownloads() {
     const currentJobId = window.currentJobId;
     if (currentJobId) {
-        // Hide progress and show downloads
+        console.log('Manually enabling downloads for job:', currentJobId);
+        
+        // Update download status section to show completion
+        const downloadStatus = document.getElementById('downloadStatus');
+        downloadStatus.className = 'mt-4 p-4 bg-success text-white rounded';
+        downloadStatus.querySelector('h6').innerHTML = '🎉 Downloads Ready!';
+        downloadStatus.querySelector('p').textContent = 'Your transcription is complete! Click any button to download.';
+        
+        // Hide the check button
+        document.getElementById('checkDownloads').style.display = 'none';
+        
+        // Enable download buttons and set correct links
+        const txtBtn = document.getElementById('directTxtLink');
+        const srtBtn = document.getElementById('directSrtLink');
+        const vttBtn = document.getElementById('directVttLink');
+        
+        // Convert buttons to working download links
+        txtBtn.disabled = false;
+        txtBtn.className = 'btn btn-light btn-lg';
+        txtBtn.onclick = () => window.open(`/download/${currentJobId}?format=txt`, '_blank');
+        
+        srtBtn.disabled = false;
+        srtBtn.className = 'btn btn-light btn-lg';
+        srtBtn.onclick = () => window.open(`/download/${currentJobId}?format=srt`, '_blank');
+        
+        vttBtn.disabled = false;
+        vttBtn.className = 'btn btn-light btn-lg';
+        vttBtn.onclick = () => window.open(`/download/${currentJobId}?format=vtt`, '_blank');
+        
+        // Also show the main download section
         document.getElementById('processingSection').classList.add('d-none');
         document.getElementById('downloadSection').classList.remove('d-none');
         
-        // Set download links
+        // Set main download links
         document.getElementById('downloadTxt').href = `/download/${currentJobId}?format=txt`;
         document.getElementById('downloadSrt').href = `/download/${currentJobId}?format=srt`;
         document.getElementById('downloadVtt').href = `/download/${currentJobId}?format=vtt`;

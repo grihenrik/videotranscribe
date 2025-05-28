@@ -120,14 +120,17 @@
                     <p class="text-muted">Please do not close this page.</p>
                     
                     <!-- Download status section -->
-                    <div id="downloadStatus" class="mt-4 p-4 bg-warning text-dark rounded">
+                    <div id="downloadStatus" class="mt-4 p-4 bg-info text-white rounded">
                         <h6 class="mb-3">⏳ Transcription in Progress...</h6>
+                        <button id="checkDownloads" class="btn btn-warning btn-lg mb-3" onclick="enableDownloads()">
+                            🔄 Check if Downloads Ready
+                        </button>
                         <div class="d-grid gap-2">
                             <button id="directTxtLink" class="btn btn-secondary btn-lg" disabled>📄 Text Format (.txt)</button>
                             <button id="directSrtLink" class="btn btn-secondary btn-lg" disabled>🎬 Subtitles (.srt)</button>
                             <button id="directVttLink" class="btn btn-secondary btn-lg" disabled>🌐 Web Subtitles (.vtt)</button>
                         </div>
-                        <p class="text-muted mt-3 mb-0 small">Downloads will be enabled when transcription completes</p>
+                        <p class="text-white-50 mt-3 mb-0 small">Click "Check if Downloads Ready" after 20-30 seconds</p>
                     </div>
                 </div>
             </div>
