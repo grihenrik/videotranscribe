@@ -703,13 +703,18 @@ def transcribe():
         video_id = video_id_match.group(1)
         video_title = f"YouTube Video ({video_id})"
         
-        # For testing, return success immediately
+        # For testing, return success immediately with download links
         return jsonify({
             'job_id': job_id,
             'status': 'completed',
             'video_id': video_id,
             'video_title': video_title,
-            'message': 'Transcription completed successfully (test mode)'
+            'message': 'Transcription completed successfully (test mode)',
+            'download_links': {
+                'txt': f'/download/{job_id}?format=txt',
+                'srt': f'/download/{job_id}?format=srt',
+                'vtt': f'/download/{job_id}?format=vtt'
+            }
         })
     
     # Handle batch processing
