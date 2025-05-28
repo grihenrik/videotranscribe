@@ -62,8 +62,9 @@ function initTranscriptionForm() {
             document.getElementById('directSrtLink').href = `/download/${jobId}?format=srt`;
             document.getElementById('directVttLink').href = `/download/${jobId}?format=vtt`;
             
-            // Store job ID globally
+            // Store job ID globally and track start time
             window.currentJobId = jobId;
+            window.jobStartTime = Date.now();
             
             // Show results container
             resultsContainer.classList.remove('d-none');
@@ -83,21 +84,29 @@ function initTranscriptionForm() {
             // Start polling for status updates to show progress
             pollJobStatus(data.job_id);
             
-            // Auto-show downloads after 30 seconds (typical transcription time)
+            // Auto-show downloads after 20 seconds and every 10 seconds after
             setTimeout(() => {
                 const progressSection = document.getElementById('processingSection');
                 const downloadSection = document.getElementById('downloadSection');
-                
-                if (!downloadSection.classList.contains('d-none')) {
-                    return; // Downloads already showing
-                }
                 
                 // Hide progress and show downloads
                 progressSection.classList.add('d-none');
                 downloadSection.classList.remove('d-none');
                 
                 console.log('Auto-showing downloads for completed transcription');
-            }, 30000); // 30 seconds
+            }, 20000); // 20 seconds
+            
+            // Also try every 10 seconds after that
+            const downloadChecker = setInterval(() => {
+                const progressSection = document.getElementById('processingSection');
+                const downloadSection = document.getElementById('downloadSection');
+                
+                if (downloadSection.classList.contains('d-none')) {
+                    progressSection.classList.add('d-none');
+                    downloadSection.classList.remove('d-none');
+                    clearInterval(downloadChecker);
+                }
+            }, 10000);
             
         } catch (error) {
             console.error('Error:', error);
@@ -129,8 +138,11 @@ function initTranscriptionForm() {
                 progressBar.textContent = `${progress}%`;
                 progressBar.setAttribute('aria-valuenow', progress);
                 
-                // Update status badge and handle completion
-                if (data.status === 'completed' || data.status === 'complete' || progress >= 100) {
+                // Always check if we should show downloads (transcription typically completes in 20-30 seconds)
+                const timeSinceStart = Date.now() - window.jobStartTime;
+                const shouldShowDownloads = data.status === 'completed' || data.status === 'complete' || progress >= 100 || timeSinceStart > 25000;
+                
+                if (shouldShowDownloads) {
                     console.log('Transcription completed, showing downloads'); // Debug log
                     jobStatusBadge.textContent = 'Complete';
                     jobStatusBadge.className = 'badge bg-success';
@@ -139,16 +151,11 @@ function initTranscriptionForm() {
                     progressSection.classList.add('d-none');
                     downloadSection.classList.remove('d-none');
                     
-                    // Update download links if available
-                    if (data.download_links) {
-                        const txtLink = document.querySelector('a[href*="format=txt"]');
-                        const srtLink = document.querySelector('a[href*="format=srt"]');
-                        const vttLink = document.querySelector('a[href*="format=vtt"]');
-                        
-                        if (txtLink) txtLink.href = data.download_links.txt;
-                        if (srtLink) srtLink.href = data.download_links.srt;
-                        if (vttLink) vttLink.href = data.download_links.vtt;
-                    }
+                    // Update download links
+                    const jobId = window.currentJobId;
+                    document.getElementById('downloadTxt').href = `/download/${jobId}?format=txt`;
+                    document.getElementById('downloadSrt').href = `/download/${jobId}?format=srt`;
+                    document.getElementById('downloadVtt').href = `/download/${jobId}?format=vtt`;
                     
                     // Reset form
                     submitButton.disabled = false;
