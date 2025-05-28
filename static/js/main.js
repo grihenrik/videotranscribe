@@ -55,6 +55,15 @@ function initTranscriptionForm() {
             }
             
             const data = await response.json();
+            const jobId = data.job_id;
+            
+            // Set direct download links immediately when job starts
+            document.getElementById('directTxtLink').href = `/download/${jobId}?format=txt`;
+            document.getElementById('directSrtLink').href = `/download/${jobId}?format=srt`;
+            document.getElementById('directVttLink').href = `/download/${jobId}?format=vtt`;
+            
+            // Store job ID globally
+            window.currentJobId = jobId;
             
             // Show results container
             resultsContainer.classList.remove('d-none');
