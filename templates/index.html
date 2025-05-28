@@ -119,15 +119,15 @@
                     <p class="text-muted mb-0">This may take a few minutes depending on the video length.</p>
                     <p class="text-muted">Please do not close this page.</p>
                     
-                    <!-- Direct download links - Always visible -->
-                    <div class="mt-4 p-4 bg-success text-white rounded">
-                        <h5 class="text-white mb-3">🎉 Downloads Available!</h5>
+                    <!-- Download status section -->
+                    <div id="downloadStatus" class="mt-4 p-4 bg-warning text-dark rounded">
+                        <h6 class="mb-3">⏳ Transcription in Progress...</h6>
                         <div class="d-grid gap-2">
-                            <a href="#" id="directTxtLink" class="btn btn-light btn-lg">📄 Download Text (.txt)</a>
-                            <a href="#" id="directSrtLink" class="btn btn-light btn-lg">🎬 Download Subtitles (.srt)</a>
-                            <a href="#" id="directVttLink" class="btn btn-light btn-lg">🌐 Download Web Subtitles (.vtt)</a>
+                            <button id="directTxtLink" class="btn btn-secondary btn-lg" disabled>📄 Text Format (.txt)</button>
+                            <button id="directSrtLink" class="btn btn-secondary btn-lg" disabled>🎬 Subtitles (.srt)</button>
+                            <button id="directVttLink" class="btn btn-secondary btn-lg" disabled>🌐 Web Subtitles (.vtt)</button>
                         </div>
-                        <p class="text-white-50 mt-3 mb-0 small">Your transcription is complete! Click any button above to download.</p>
+                        <p class="text-muted mt-3 mb-0 small">Downloads will be enabled when transcription completes</p>
                     </div>
                 </div>
             </div>
