@@ -156,7 +156,11 @@ def process_transcription(job_id, url, mode, lang, video_id, batch_id=None):
             }
             
             # Update transcription status in database
-            update_transcription_status(video_id, 'completed')
+            try:
+                update_transcription_status(video_id, 'completed')
+            except Exception as db_error:
+                print(f"Database update error: {db_error}")
+                # Continue anyway, transcription was successful
             
         except Exception as e:
             job_statuses[job_id] = {
@@ -166,7 +170,11 @@ def process_transcription(job_id, url, mode, lang, video_id, batch_id=None):
             }
             
             # Update transcription status in database
-            update_transcription_status(video_id, 'failed', str(e))
+            try:
+                update_transcription_status(video_id, 'failed', str(e))
+            except Exception as db_error:
+                print(f"Database update error during failure: {db_error}")
+                # Continue anyway
 
 # Utility functions
 def format_duration(seconds):
