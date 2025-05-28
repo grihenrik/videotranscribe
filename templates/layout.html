@@ -171,27 +171,27 @@
     <!-- Sidebar Navigation -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-nav">
-            <h5 class="text-light mb-3 ps-2">{{ _('Navigation') }}</h5>
+            <h5 class="text-light mb-3 ps-2">Navigation</h5>
             <a href="/" class="nav-link">
-                <i data-feather="home"></i> {{ _('Home') }}
+                <i data-feather="home"></i> Home
             </a>
             {% if current_user.is_authenticated %}
             <a href="/dashboard" class="nav-link">
-                <i data-feather="bar-chart-2"></i> {{ _('Dashboard') }}
+                <i data-feather="bar-chart-2"></i> Dashboard
             </a>
             {% endif %}
             <a href="/batch" class="nav-link">
-                <i data-feather="layers"></i> {{ _('Batch Processing') }}
+                <i data-feather="layers"></i> Batch Processing
             </a>
             <a href="/playlist" class="nav-link">
-                <i data-feather="list"></i> {{ _('Playlist Processing') }}
+                <i data-feather="list"></i> Playlist Processing
             </a>
             <a href="/settings" class="nav-link">
-                <i data-feather="settings"></i> {{ _('Settings') }}
+                <i data-feather="settings"></i> Settings
             </a>
             {% if current_user.is_authenticated and current_user.is_admin %}
             <a href="/admin" class="nav-link">
-                <i data-feather="shield"></i> {{ _('Admin Dashboard') }}
+                <i data-feather="shield"></i> Admin Dashboard
             </a>
             {% endif %}
         </div>
@@ -205,14 +205,14 @@
                 {% else %}
                 <i data-feather="user"></i>
                 {% endif %}
-                {{ current_user.first_name or _('User') }}
+                {{ current_user.first_name or 'User' }}
             </a>
             <a href="/auth/logout" class="nav-link">
-                <i data-feather="log-out"></i> {{ _('Logout') }}
+                <i data-feather="log-out"></i> Logout
             </a>
             {% else %}
             <a href="/auth/login" class="nav-link">
-                <i data-feather="lock"></i> {{ _('Login') }}
+                <i data-feather="lock"></i> Login
             </a>
             {% endif %}
         </div>

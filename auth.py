@@ -12,7 +12,7 @@ from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
 from sqlalchemy.exc import NoResultFound
 
 # Import from the global app and db objects
-from app import app, db
+from flask_app import app, db
 from models import User, OAuth
 
 # Create auth blueprint

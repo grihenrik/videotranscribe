@@ -9,7 +9,7 @@ from sqlalchemy import func, desc, and_
 from flask import render_template, redirect, url_for, request, jsonify, flash, Response, send_file, session
 from flask_login import current_user, login_required
 
-from app import app, db
+from flask_app import app, db
 from models import User, Transcription, Notification, DailyStats
 from auth import admin_required
 
