@@ -33,6 +33,141 @@ transcription_cache = {}  # Cache completed transcriptions
 worker_thread = None
 worker_lock = threading.Lock()
 
+def ensure_worker_thread():
+    """Ensure the worker thread is running"""
+    global worker_thread
+    with worker_lock:
+        if worker_thread is None or not worker_thread.is_alive():
+            worker_thread = threading.Thread(target=process_queue, daemon=True)
+            worker_thread.start()
+
+def process_queue():
+    """Process jobs from the transcription queue"""
+    while True:
+        try:
+            job_id, url, mode, lang, video_id = job_queue.get(timeout=1)
+            process_transcription(job_id, url, mode, lang, video_id)
+        except queue.Empty:
+            continue
+        except Exception as e:
+            print(f"Error processing job: {e}")
+
+def process_transcription(job_id, url, mode, lang, video_id, batch_id=None):
+    """Process a single transcription job with real YouTube data"""
+    with app.app_context():
+        try:
+            # Update status to downloading
+            job_statuses[job_id] = {
+                'status': 'downloading',
+                'progress': 5,
+                'message': 'Extracting video information...'
+            }
+            
+            # Get video information
+            video_info = youtube_service.get_video_info(url)
+            video_title = video_info.get('title', 'Unknown Video')
+            
+            job_statuses[job_id] = {
+                'status': 'downloading',
+                'progress': 15,
+                'message': f'Processing: {video_title[:50]}...'
+            }
+            
+            transcription_data = None
+            
+            # Try captions first if mode is 'auto' or 'captions'
+            if mode in ['auto', 'captions']:
+                job_statuses[job_id] = {
+                    'status': 'downloading',
+                    'progress': 25,
+                    'message': 'Checking for available captions...'
+                }
+                
+                captions = youtube_service.get_captions(url, lang)
+                if captions:
+                    transcription_data = whisper_service.process_captions_data(captions)
+                    job_statuses[job_id] = {
+                        'status': 'processing',
+                        'progress': 60,
+                        'message': 'Processing existing captions...'
+                    }
+            
+            # If no captions found and mode allows Whisper, use Whisper API
+            if not transcription_data and mode in ['auto', 'whisper']:
+                job_statuses[job_id] = {
+                    'status': 'downloading',
+                    'progress': 35,
+                    'message': 'Downloading audio for AI transcription...'
+                }
+                
+                # Download audio
+                temp_dir = tempfile.mkdtemp()
+                try:
+                    audio_file = youtube_service.download_audio(url, temp_dir)
+                    
+                    job_statuses[job_id] = {
+                        'status': 'processing',
+                        'progress': 50,
+                        'message': 'Transcribing with AI (this may take a few minutes)...'
+                    }
+                    
+                    # Use Whisper API for transcription
+                    transcription_data = whisper_service.transcribe_audio(audio_file, lang if lang != 'auto' else None)
+                    
+                    job_statuses[job_id] = {
+                        'status': 'processing',
+                        'progress': 85,
+                        'message': 'AI transcription completed, formatting results...'
+                    }
+                    
+                finally:
+                    # Clean up temporary files
+                    import shutil
+                    if os.path.exists(temp_dir):
+                        shutil.rmtree(temp_dir)
+            
+            if not transcription_data:
+                raise Exception("No captions available and Whisper transcription failed")
+            
+            # Cache the transcription data
+            transcription_cache[job_id] = {
+                'data': transcription_data,
+                'video_title': video_title,
+                'created_at': time.time()
+            }
+            
+            job_statuses[job_id] = {
+                'status': 'finalizing',
+                'progress': 95,
+                'message': 'Preparing download files...'
+            }
+            
+            # Complete the job
+            job_statuses[job_id] = {
+                'status': 'completed',
+                'progress': 100,
+                'message': f'Transcription completed for: {video_title}',
+                'video_title': video_title,
+                'download_links': {
+                    'txt': f'/download/{job_id}?format=txt',
+                    'srt': f'/download/{job_id}?format=srt',
+                    'vtt': f'/download/{job_id}?format=vtt'
+                }
+            }
+            
+            # Update transcription status in database
+            update_transcription_status(video_id, 'completed')
+            
+        except Exception as e:
+            job_statuses[job_id] = {
+                'status': 'failed',
+                'progress': 0,
+                'message': f'Error processing video: {str(e)}'
+            }
+            
+            # Update transcription status in database
+            update_transcription_status(video_id, 'failed', str(e))
+
 # Utility functions
 def format_duration(seconds):
     """Format seconds into human-readable duration (HH:MM:SS)"""
@@ -723,14 +858,39 @@ def transcribe():
         video_id = video_id_match.group(1)
         video_title = f"YouTube Video ({video_id})"
         
-        # Return processing status to show progress bar
-        return jsonify({
-            'job_id': job_id,
-            'status': 'processing',
-            'video_id': video_id,
-            'video_title': video_title,
-            'message': 'Transcription started'
-        })
+        try:
+            # Get real video info using YouTube service
+            video_info = youtube_service.get_video_info(url)
+            video_title = video_info.get('title', f"YouTube Video ({video_id})")
+            video_duration = video_info.get('duration', 0)
+            
+            # Track transcription in database
+            track_transcription(video_id, video_title, url, mode, lang, 
+                              current_user.id if current_user.is_authenticated else None,
+                              duration=video_duration)
+            
+            # Add job to queue for real processing
+            job_queue.put((job_id, url, mode, lang, video_id))
+            
+            # Initialize job status
+            job_statuses[job_id] = {
+                'status': 'pending',
+                'progress': 0,
+                'message': f'Processing: {video_title[:50]}...',
+                'video_title': video_title
+            }
+            
+            # Ensure worker thread is running
+            ensure_worker_thread()
+            
+            return jsonify({
+                'job_id': job_id,
+                'video_title': video_title,
+                'estimated_duration': video_duration
+            })
+            
+        except Exception as e:
+            return jsonify({'error': f'Unable to process video: {str(e)}'}), 400
     
     # Handle batch processing
     video_urls = data.get('video_urls')
