@@ -161,6 +161,9 @@ def process_transcription(job_id, url, mode, lang, video_id, batch_id=None):
             except Exception as db_error:
                 print(f"Database update error: {db_error}")
                 # Continue anyway, transcription was successful
+                
+            # Keep job status available for frontend polling
+            print(f"Transcription completed for job {job_id}")
             
         except Exception as e:
             job_statuses[job_id] = {
