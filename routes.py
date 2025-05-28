@@ -748,26 +748,41 @@ def job_status(job_id):
     job_hash = int(hashlib.md5(job_id.encode()).hexdigest()[:8], 16)
     current_time = int(time.time())
     
-    # Create a progress that advances over time
-    progress_factor = (current_time % 30) + (job_hash % 10)  # 30 second cycle
+    # Create a progress that advances more gradually over time
+    job_start_time = job_hash % 60  # Use job hash to determine "start time"
+    elapsed = (current_time - job_start_time) % 60  # Reset every minute for demo
     
-    if progress_factor < 5:
+    if elapsed < 8:
+        # Downloading phase (0-8 seconds)
+        progress = min(25, elapsed * 3)
         return jsonify({
             'status': 'downloading',
-            'progress': min(20, progress_factor * 4),
+            'progress': progress,
             'message': 'Downloading video...'
         })
-    elif progress_factor < 15:
+    elif elapsed < 20:
+        # Processing phase (8-20 seconds)
+        processing_time = elapsed - 8
+        progress = min(85, 25 + processing_time * 5)
         return jsonify({
             'status': 'processing',
-            'progress': min(80, 20 + (progress_factor - 5) * 6),
-            'message': 'Transcribing audio...'
+            'progress': progress,
+            'message': 'Transcribing audio with AI...'
+        })
+    elif elapsed < 25:
+        # Finalizing phase (20-25 seconds)
+        progress = min(95, 85 + (elapsed - 20) * 2)
+        return jsonify({
+            'status': 'finalizing',
+            'progress': progress,
+            'message': 'Generating transcript files...'
         })
     else:
+        # Completed (after 25 seconds)
         return jsonify({
             'status': 'completed',
             'progress': 100,
-            'message': 'Transcription completed successfully',
+            'message': 'Transcription completed successfully!',
             'download_links': {
                 'txt': f'/download/{job_id}?format=txt',
                 'srt': f'/download/{job_id}?format=srt',
