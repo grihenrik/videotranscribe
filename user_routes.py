@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user, logout_user
 from sqlalchemy import func, desc
 
-from app import db
+from flask_app import db
 from models import User, Transcription, Notification, DailyStats
 from auth import admin_required
 
