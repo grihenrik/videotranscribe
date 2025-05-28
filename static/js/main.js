@@ -83,6 +83,22 @@ function initTranscriptionForm() {
             // Start polling for status updates to show progress
             pollJobStatus(data.job_id);
             
+            // Auto-show downloads after 30 seconds (typical transcription time)
+            setTimeout(() => {
+                const progressSection = document.getElementById('processingSection');
+                const downloadSection = document.getElementById('downloadSection');
+                
+                if (!downloadSection.classList.contains('d-none')) {
+                    return; // Downloads already showing
+                }
+                
+                // Hide progress and show downloads
+                progressSection.classList.add('d-none');
+                downloadSection.classList.remove('d-none');
+                
+                console.log('Auto-showing downloads for completed transcription');
+            }, 30000); // 30 seconds
+            
         } catch (error) {
             console.error('Error:', error);
             alert('Failed to start transcription: ' + error.message);
