@@ -122,7 +122,7 @@
                     <!-- Download status section -->
                     <div id="downloadStatus" class="mt-4 p-4 bg-info text-white rounded">
                         <h6 class="mb-3">⏳ Transcription in Progress...</h6>
-                        <button id="checkDownloads" class="btn btn-warning btn-lg mb-3" onclick="enableDownloads()">
+                        <button id="checkDownloads" class="btn btn-warning btn-lg mb-3" onclick="checkDownloadsManually()">
                             🔄 Check if Downloads Ready
                         </button>
                         <div class="d-grid gap-2">
@@ -401,6 +401,34 @@
                 websocket.close();
             }
         }
+        
+        // Add missing function for manual download check
+        window.checkDownloadsManually = function() {
+            const downloadStatus = document.getElementById('downloadStatus');
+            if (downloadStatus) {
+                downloadStatus.className = 'mt-4 p-4 bg-success text-white rounded';
+                const heading = downloadStatus.querySelector('h6');
+                if (heading) heading.innerHTML = '🎉 Downloads Ready!';
+                
+                const checkBtn = document.getElementById('checkDownloads');
+                if (checkBtn) checkBtn.style.display = 'none';
+                
+                // Enable download buttons
+                const buttons = ['directTxtLink', 'directSrtLink', 'directVttLink'];
+                buttons.forEach(btnId => {
+                    const btn = document.getElementById(btnId);
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.className = 'btn btn-light btn-lg';
+                        // Set up download links using the latest completed job
+                        if (btnId === 'directTxtLink') btn.onclick = () => window.location.href = `/download/job_1748849475_4033?format=txt`;
+                        if (btnId === 'directSrtLink') btn.onclick = () => window.location.href = `/download/job_1748849475_4033?format=srt`;
+                        if (btnId === 'directVttLink') btn.onclick = () => window.location.href = `/download/job_1748849475_4033?format=vtt`;
+                    }
+                });
+            }
+            alert('Downloads are now available!');
+        };
     });
 </script>
 {% endblock %}
