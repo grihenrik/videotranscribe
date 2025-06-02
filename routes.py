@@ -129,12 +129,37 @@ def process_transcription(job_id, url, mode, lang, video_id, batch_id=None):
             if not transcription_data:
                 raise Exception("No captions available and Whisper transcription failed")
             
-            # Cache the transcription data
+            # Cache the transcription data in memory
             transcription_cache[job_id] = {
                 'data': transcription_data,
                 'video_title': video_title,
                 'created_at': time.time()
             }
+            
+            # Also save to files for persistent access
+            temp_dir = os.path.join('tmp', job_id)
+            os.makedirs(temp_dir, exist_ok=True)
+            
+            # Generate formatted content
+            txt_content = whisper_service.format_as_txt(transcription_data)
+            srt_content = whisper_service.format_as_srt(transcription_data)
+            vtt_content = whisper_service.format_as_vtt(transcription_data)
+            
+            # Save files
+            with open(os.path.join(temp_dir, f'{job_id}.txt'), 'w', encoding='utf-8') as f:
+                f.write(txt_content)
+            with open(os.path.join(temp_dir, f'{job_id}.srt'), 'w', encoding='utf-8') as f:
+                f.write(srt_content)
+            with open(os.path.join(temp_dir, f'{job_id}.vtt'), 'w', encoding='utf-8') as f:
+                f.write(vtt_content)
+            
+            # Save metadata
+            with open(os.path.join(temp_dir, 'metadata.json'), 'w', encoding='utf-8') as f:
+                json.dump({
+                    'video_title': video_title,
+                    'job_id': job_id,
+                    'created_at': time.time()
+                }, f)
             
             job_statuses[job_id] = {
                 'status': 'finalizing',
@@ -974,12 +999,42 @@ def download(job_id):
     """Download transcription endpoint"""
     format_type = request.args.get('format', 'txt')
     
-    # Get transcription data from cache
+    # Try to get from cache first
     cached_transcription = transcription_cache.get(job_id)
     
+    # If not in cache, try to load from files
     if not cached_transcription:
-        return jsonify({'error': 'Transcription not found or expired'}), 404
+        temp_dir = os.path.join('tmp', job_id)
+        file_path = os.path.join(temp_dir, f'{job_id}.{format_type}')
+        metadata_path = os.path.join(temp_dir, 'metadata.json')
+        
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # Get video title from metadata
+                video_title = 'transcription'
+                if os.path.exists(metadata_path):
+                    with open(metadata_path, 'r', encoding='utf-8') as f:
+                        metadata = json.load(f)
+                        video_title = metadata.get('video_title', 'transcription')
+                
+                # Create response with appropriate headers
+                response = app.response_class(
+                    content,
+                    mimetype='text/plain',
+                    headers={
+                        'Content-Disposition': f'attachment; filename={video_title}_{job_id}.{format_type}'
+                    }
+                )
+                return response
+            except Exception as e:
+                return jsonify({'error': f'Error reading transcription file: {str(e)}'}), 500
+        else:
+            return jsonify({'error': 'Transcription not found or expired'}), 404
     
+    # Use cached data
     transcription_data = cached_transcription['data']
     video_title = cached_transcription.get('video_title', 'transcription')
     
@@ -998,7 +1053,7 @@ def download(job_id):
         content,
         mimetype='text/plain',
         headers={
-            'Content-Disposition': f'attachment; filename=transcription_{job_id}.{format_type}'
+            'Content-Disposition': f'attachment; filename={video_title}_{job_id}.{format_type}'
         }
     )
     return response
