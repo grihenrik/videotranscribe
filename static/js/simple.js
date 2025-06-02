@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Submit the form
             const formData = new FormData(transcribeForm);
             
-            fetch('/api/transcribe', {
+            fetch('/transcribe', {
                 method: 'POST',
                 body: formData
             })
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Simple polling function (no WebSocket)
     function pollJobStatus(jobId) {
         const pollInterval = setInterval(() => {
-            fetch(`/api/job-status/${jobId}`)
+            fetch(`/job-status/${jobId}`)
                 .then(response => response.json())
                 .then(data => {
                     console.log('Job status:', data);
@@ -88,17 +88,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const vttLink = document.getElementById('directVttLink');
 
         if (txtLink) {
-            txtLink.href = `/api/download/${jobId}?format=txt`;
+            txtLink.href = `/download/${jobId}?format=txt`;
             txtLink.disabled = false;
             txtLink.className = 'btn btn-light btn-lg';
         }
         if (srtLink) {
-            srtLink.href = `/api/download/${jobId}?format=srt`;
+            srtLink.href = `/download/${jobId}?format=srt`;
             srtLink.disabled = false;
             srtLink.className = 'btn btn-light btn-lg';
         }
         if (vttLink) {
-            vttLink.href = `/api/download/${jobId}?format=vtt`;
+            vttLink.href = `/download/${jobId}?format=vtt`;
             vttLink.disabled = false;
             vttLink.className = 'btn btn-light btn-lg';
         }
