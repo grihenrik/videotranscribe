@@ -212,64 +212,60 @@ document.getElementById('batchForm').addEventListener('submit', async function(e
         const result = await response.json();
         
         if (result.job_id) {
-            // Connect to WebSocket for real-time updates
-            const ws = new WebSocket(`ws://${window.location.host}/ws/${result.job_id}`);
-            
-            ws.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                
-                if (data.progress !== undefined) {
-                    progressBar.style.width = data.progress + '%';
-                    progressBar.textContent = Math.round(data.progress) + '%';
-                }
-                
-                if (data.status) {
-                    progressText.textContent = data.status;
-                }
-                
-                if (data.current_video) {
-                    currentVideo.textContent = `Processing: ${data.current_video}`;
-                }
-                
-                if (data.current_index !== undefined) {
-                    // Update video status
-                    const statusEl = document.getElementById(`status-${data.current_index}`);
-                    if (statusEl) {
-                        if (data.video_status === 'processing') {
-                            statusEl.innerHTML = '<i data-feather="loader" class="text-primary"></i>';
-                        } else if (data.video_status === 'completed') {
-                            statusEl.innerHTML = '<i data-feather="check" class="text-success"></i>';
-                        } else if (data.video_status === 'failed') {
-                            statusEl.innerHTML = '<i data-feather="x" class="text-danger"></i>';
+            // Use polling instead of WebSocket to avoid security errors
+            pollBatchStatus(result.job_id);
+        }
+        
+        function pollBatchStatus(jobId) {
+            const pollInterval = setInterval(() => {
+                fetch(`/api/job-status/${jobId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.progress !== undefined) {
+                            progressBar.style.width = data.progress + '%';
+                            progressBar.textContent = Math.round(data.progress) + '%';
                         }
-                        feather.replace();
-                    }
-                }
-                
-                if (data.status === 'completed') {
-                    progressSection.style.display = 'none';
-                    resultsSection.style.display = 'block';
-                    
-                    // Show download links
-                    const downloadLinks = document.getElementById('downloadLinks');
-                    downloadLinks.innerHTML = `
-                        <a href="/download/${result.job_id}?format=zip" class="btn btn-primary">
-                            <i data-feather="download" class="me-2"></i>Download All (ZIP)
-                        </a>
-                    `;
-                    feather.replace();
-                }
-                
-                if (data.status === 'failed') {
-                    progressText.textContent = 'Processing failed: ' + (data.error || 'Unknown error');
-                    progressBar.classList.add('bg-danger');
-                }
-            };
+                        
+                        if (data.status) {
+                            progressText.textContent = data.status;
+                        }
+                        
+                        if (data.current_video) {
+                            currentVideo.textContent = `Processing: ${data.current_video}`;
+                        }
+                        
+                        if (data.status === 'completed') {
+                            clearInterval(pollInterval);
+                            progressSection.style.display = 'none';
+                            resultsSection.style.display = 'block';
+                            
+                            // Show download links
+                            const downloadLinks = document.getElementById('downloadLinks');
+                            downloadLinks.innerHTML = `
+                                <a href="/api/download/${jobId}?format=zip" class="btn btn-primary">
+                                    <i data-feather="download" class="me-2"></i>Download All (ZIP)
+                                </a>
+                            `;
+                            feather.replace();
+                        }
+                        
+                        if (data.status === 'failed') {
+                            clearInterval(pollInterval);
+                            progressText.textContent = 'Processing failed: ' + (data.error || 'Unknown error');
+                            progressBar.classList.add('bg-danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Polling error:', error);
+                        // Continue polling even on error
+                    });
+            }, 3000);
             
-            ws.onerror = function(error) {
-                console.error('WebSocket error:', error);
-                progressText.textContent = 'Connection error. Please refresh and try again.';
-            };
+            // Stop polling after 30 minutes
+            setTimeout(() => {
+                clearInterval(pollInterval);
+                progressText.textContent = 'Processing timeout. Please check downloads page.';
+            }, 1800000);
         }
     } catch (error) {
         console.error('Error:', error);
