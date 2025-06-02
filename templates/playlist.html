@@ -184,7 +184,7 @@ document.getElementById('playlistForm').addEventListener('submit', async functio
         
         function pollPlaylistStatus(jobId) {
             const pollInterval = setInterval(() => {
-                fetch(`/api/job-status/${jobId}`)
+                fetch(`/job-status/${jobId}`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.progress !== undefined) {
