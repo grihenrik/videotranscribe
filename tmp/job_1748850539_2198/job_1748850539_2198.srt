@@ -1,0 +1,1128 @@
+1
+00:00:00,001 --> 00:00:06,400
+So I'm a big believer that the secret to building a successful directory is to become a master curator.
+
+2
+00:00:06,400 --> 00:00:12,199
+That means that you want to focus on creating the highest quality listings on your site
+
+3
+00:00:12,199 --> 00:00:16,199
+rather than just focusing on having as many listings as possible.
+
+4
+00:00:16,199 --> 00:00:22,199
+If you can nail that, not just will you find it easier to attract people to your directory,
+
+5
+00:00:22,199 --> 00:00:27,600
+you'll also have people coming back because you become a trusted authority in your niche.
+
+6
+00:00:27,600 --> 00:00:31,800
+But a big challenge is how do you even find high quality data?
+
+7
+00:00:31,800 --> 00:00:36,200
+And that is exactly what we're going to be talking about in today's video.
+
+8
+00:00:36,200 --> 00:00:37,200
+Let's get into it.
+
+9
+00:00:37,200 --> 00:00:38,200
+Hey friends, what's going on?
+
+10
+00:00:38,200 --> 00:00:39,200
+Welcome back to the channel.
+
+11
+00:00:39,200 --> 00:00:46,200
+So in today's video, we're going to be going over how to find high quality data for your directory website.
+
+12
+00:00:46,200 --> 00:00:51,600
+If you are brand new here, last week I published a video where I broke down the exact process that I went through
+
+13
+00:00:51,600 --> 00:00:57,399
+in order to create a directory website called the running directory using no code tools.
+
+14
+00:00:57,399 --> 00:01:01,000
+If you have not seen that video yet, just jump back, check it out.
+
+15
+00:01:01,000 --> 00:01:07,400
+It will add a whole lot more context to this video today and it will be a lot easier for you to get started.
+
+16
+00:01:07,400 --> 00:01:15,599
+Now one of the questions that came up quite a bit in the last video is how do you find high quality data for your directory?
+
+17
+00:01:15,599 --> 00:01:22,000
+Now if you go out and ask anyone who builds directories how they approach it, you'll typically get one of two answers.
+
+18
+00:01:22,000 --> 00:01:30,599
+Answer number one is to find a high quality website or find an API and to then use a scraping tool to basically
+
+19
+00:01:30,599 --> 00:01:34,599
+transfer all of that information into your own database.
+
+20
+00:01:34,599 --> 00:01:41,400
+Now I'm personally not a huge fan of it simply because you end up in situations where you accidentally transfer
+
+21
+00:01:41,400 --> 00:01:45,000
+over a whole bunch of data that's either out of date or inaccurate.
+
+22
+00:01:45,000 --> 00:01:54,599
+And secondly, I have also found that the actual secret to managing data on your website long term is actually to have your customers manage it.
+
+23
+00:01:54,599 --> 00:02:01,000
+And the way that you can get customers to manage your listing is to simply become an authority in your space
+
+24
+00:02:01,000 --> 00:02:06,400
+and to just become a valuable resource for people who end up listing on your site.
+
+25
+00:02:06,400 --> 00:02:14,000
+And the way that you get to that point is by setting a super high bar when it comes to the quality of listings on your site.
+
+26
+00:02:14,000 --> 00:02:20,000
+So today what I'm going to be doing is I'm going to be breaking down four workflows that I use to one,
+
+27
+00:02:20,000 --> 00:02:28,800
+find high quality data sources in order to find my first few listings, workflows that I use to enrich the data that I find.
+
+28
+00:02:28,800 --> 00:02:35,099
+So that means finding image assets and to doing deeper research into the individual listings.
+
+29
+00:02:35,099 --> 00:02:43,099
+And then how I also clean my data to make sure that one, I benefit from the SEO of the individual listings,
+
+30
+00:02:43,099 --> 00:02:50,000
+but also that I can just improve the overall user experience for things like listings and search and filtering.
+
+31
+00:02:50,000 --> 00:02:53,099
+Now, if you are thinking about building a directory,
+
+32
+00:02:53,099 --> 00:02:58,599
+this video here is really the video that's going to set the foundation for things to come.
+
+33
+00:02:58,599 --> 00:03:05,800
+If you can get the quality of your data right, everything else that follows after that will become so much easier.
+
+34
+00:03:05,800 --> 00:03:13,099
+And so let's dive straight into the first point, which is to go over how I find data for my directory.
+
+35
+00:03:13,099 --> 00:03:21,400
+Okay, so the first step in all of this is to find different data sources that you can use as inspiration for your directory.
+
+36
+00:03:21,400 --> 00:03:25,500
+Now, I typically think the best place to get started is with Google.
+
+37
+00:03:25,500 --> 00:03:31,599
+So let's say, for example, we are building a restaurant directory that specializes in gluten free food.
+
+38
+00:03:31,599 --> 00:03:35,800
+So what I would typically do is I'd start off with a simple Google search.
+
+39
+00:03:35,800 --> 00:03:40,699
+So I'd go gluten free restaurants in New York.
+
+40
+00:03:40,699 --> 00:03:44,300
+And what you'll find is you'll get a whole bunch of different results.
+
+41
+00:03:44,300 --> 00:03:53,000
+So for example, you'll have Google My Business listings, you'll have blogs, you'll have directory websites,
+
+42
+00:03:53,000 --> 00:03:56,400
+you'll oftentimes get links to different Reddit posts.
+
+43
+00:03:56,400 --> 00:04:01,699
+And all of these data sources here are really the key starting point to it all.
+
+44
+00:04:01,699 --> 00:04:10,199
+What you'll want to do is you'll want to review different data sources to essentially see what it is that other people are listing.
+
+45
+00:04:10,199 --> 00:04:16,300
+The main benefits from taking this approach is, number one, you'll actually see what some of your competitors will do.
+
+46
+00:04:16,300 --> 00:04:19,000
+You'll be able to see what kind of data they have.
+
+47
+00:04:19,000 --> 00:04:27,600
+But more importantly, it will serve as an inspiration for finding the first bit of data that you can then use on your site.
+
+48
+00:04:27,600 --> 00:04:31,399
+Now, when it comes to finding good data sources,
+
+49
+00:04:31,399 --> 00:04:37,800
+what I actually recommend is to find data sources that have structured sites.
+
+50
+00:04:37,800 --> 00:04:43,899
+Now, what do I mean by this? Now, typically you'll find two different types of data sources when you're doing your research.
+
+51
+00:04:43,899 --> 00:04:49,899
+One is what I considered unstructured data sources and the other one is considered a structured data source.
+
+52
+00:04:49,899 --> 00:04:55,800
+Now, what do I mean by this? Now, an unstructured data source is usually something like a personal website.
+
+53
+00:04:55,800 --> 00:05:04,500
+Now, the reason why it's unstructured is because the actual setup of the content on that particular site is unique to the website itself.
+
+54
+00:05:04,500 --> 00:05:15,199
+However, on the other hand, you also have structured sites where the information and the content is laid out in the exact same way across different pages.
+
+55
+00:05:15,199 --> 00:05:19,199
+For example, Instagram. If we go and have a look at Instagram,
+
+56
+00:05:19,199 --> 00:05:24,500
+you will find that, in my case, a lot of rung clubs use Instagram to basically promote their rung clubs.
+
+57
+00:05:24,500 --> 00:05:28,100
+And all of the information is structured in a very similar way.
+
+58
+00:05:28,100 --> 00:05:32,899
+For example, every rung club on Instagram will have a profile image.
+
+59
+00:05:32,899 --> 00:05:41,899
+Then they will also have a name. They'll also have a description and they'll also have an address and a link.
+
+60
+00:05:41,899 --> 00:05:52,500
+Now, the main reason why you want to use structured data sources is because it will make the process of transferring data to your database a lot more efficient.
+
+61
+00:05:52,500 --> 00:05:55,699
+And that is what we're going to be talking about next.
+
+62
+00:05:55,699 --> 00:06:02,500
+Now, once you've found your data source, the goal is to get that data from your data source into your database in the most efficient way.
+
+63
+00:06:02,500 --> 00:06:09,000
+Now, to just quickly recap on a tool that I'm using for my database from the last video, the tool that I'm using is Airtable.
+
+64
+00:06:09,000 --> 00:06:13,199
+Now, the main reason why I use Airtable is just because it's a nice visual database tool.
+
+65
+00:06:13,199 --> 00:06:16,899
+You don't really need to have any coding background and able to use it efficiently.
+
+66
+00:06:16,899 --> 00:06:25,699
+But one of the things I didn't mention in that last video is that it also has a whole bunch of tools that makes adding data to your database super efficient.
+
+67
+00:06:25,699 --> 00:06:30,300
+One of the tools that I use is called the Airtable Web Clipper.
+
+68
+00:06:30,300 --> 00:06:35,800
+Now, the Airtable Web Clipper is a Chrome extension that you can simply install.
+
+69
+00:06:35,800 --> 00:06:41,300
+So just Google Airtable Web Clipper Chrome extension, install it.
+
+70
+00:06:41,300 --> 00:06:46,500
+And what that will allow you to do is when you're then browsing through different data sources,
+
+71
+00:06:46,500 --> 00:06:52,399
+you can actually activate your Web Clipper and add a data directly to your database from inside of the browser.
+
+72
+00:06:52,399 --> 00:06:55,899
+So, for example, here I can click on Add Record to Run Clubs.
+
+73
+00:06:55,899 --> 00:06:59,800
+And what it will do is it will now allow me to add certain information.
+
+74
+00:06:59,800 --> 00:07:03,000
+So, for example, I can add the name of the Run Club.
+
+75
+00:07:03,000 --> 00:07:06,000
+So it'd be something like Achilles International.
+
+76
+00:07:06,000 --> 00:07:07,699
+Then I can add a link to it.
+
+77
+00:07:07,699 --> 00:07:12,100
+So if there's a link in there, I can just go ahead and copy the link address.
+
+78
+00:07:12,100 --> 00:07:16,800
+If there's a logo there, I can also go ahead and just select the image from the page.
+
+79
+00:07:16,800 --> 00:07:18,399
+So let's just use this one for now.
+
+80
+00:07:18,399 --> 00:07:26,699
+And then if there's also a club description, I can just go ahead, add that in here, and add what any other information I want to my Web Clipper.
+
+81
+00:07:26,699 --> 00:07:30,199
+So you can customize your Web Clipper in whatever way you want.
+
+82
+00:07:30,199 --> 00:07:32,199
+You can add whatever fields you need.
+
+83
+00:07:32,199 --> 00:07:39,600
+And so depending on what information you typically find from your data source, you just go ahead, add that in here, and then you can just click on Add Record.
+
+84
+00:07:39,600 --> 00:07:47,800
+And what that will do is it will automatically add all of the information that you found and add it to your Web Clipper directly into your Airtable database.
+
+85
+00:07:47,800 --> 00:07:50,500
+And so then it will go ahead and look like this.
+
+86
+00:07:50,500 --> 00:08:03,000
+But one of the things that you can do with the Web Clipper that is a complete game changer and will speed up this workflow significantly is to pre-populate your Web Clipper with data on certain pages.
+
+87
+00:08:03,000 --> 00:08:14,600
+Now, the way that this works is that you can simply add your Web Clipper extension inside of Airtable and you can predetermine what you want certain fields to be populated with.
+
+88
+00:08:14,600 --> 00:08:24,000
+And so you can do something, for example, like if you want to populate the Learn More link, you can actually just take the actual page URL that you're on.
+
+89
+00:08:24,000 --> 00:08:34,799
+If you, on the other hand, want to populate something like a name, the one thing that you can do that is super powerful is actually use CSS selectors,
+
+90
+00:08:34,799 --> 00:08:45,100
+meaning that you're actually targeting the class name of a particular element on a website and you're then extracting the content from that class name.
+
+91
+00:08:45,100 --> 00:08:48,600
+And this works particularly well on structured sites.
+
+92
+00:08:48,600 --> 00:09:00,899
+So if, for example, I go to Instagram, because all of the information is on the same page and it's using the same class names because it's essentially using a CMS template page,
+
+93
+00:09:00,899 --> 00:09:07,399
+we can actually target different elements on this page using our CSS selectors.
+
+94
+00:09:07,399 --> 00:09:16,000
+Now, this here is slightly technical, but basically, if we go and have a look at the source code and we want to see what the image is,
+
+95
+00:09:16,000 --> 00:09:21,100
+you'll see that the actual image is within a certain class.
+
+96
+00:09:21,100 --> 00:09:30,500
+And so what we can do is we can simply say to our Web Clipper, hey, target the content in the class that has this class name.
+
+97
+00:09:30,500 --> 00:09:39,799
+And what it will do is when you then open up your Web Clipper, it will automatically target the classes that you specified and pre-populate your content.
+
+98
+00:09:39,799 --> 00:09:47,700
+So, for example, if I add it here, it will automatically find the name of the Run Club, which is this, the link, which is just the URL that I'm on.
+
+99
+00:09:47,700 --> 00:09:55,799
+It will also bring in the logo. So if I click onto it, you can see here it just automatically added the logo.
+
+100
+00:09:55,799 --> 00:09:59,600
+It will also add the run description if you want. I haven't set that up here.
+
+101
+00:09:59,600 --> 00:10:03,299
+And then it will also add just whatever information you need.
+
+102
+00:10:03,299 --> 00:10:13,500
+This here will make the process of adding data to your database so much more efficient because all of the information is pretty much pre-populated.
+
+103
+00:10:13,500 --> 00:10:23,899
+And so you can go ahead, see that. And that is really the first step that you can take in order to efficiently populate your database with information.
+
+104
+00:10:23,899 --> 00:10:30,500
+Now, as you're going through the process of adding all of these different data from your data source into your air table base,
+
+105
+00:10:30,500 --> 00:10:35,500
+you'll find that a lot of the information that you're actually pulling from these sites are incomplete.
+
+106
+00:10:35,500 --> 00:10:40,600
+So, for example, you might be missing things like an image that you might want to use on your listing site.
+
+107
+00:10:40,600 --> 00:10:44,399
+It might be missing links to certain types of social accounts.
+
+108
+00:10:44,399 --> 00:10:52,799
+And so what you want to do after you start populating your database is move on to the next step in managing your data for your directory,
+
+109
+00:10:52,799 --> 00:11:06,200
+which is to enrich your data. Now, enriching your data basically means to add additional information or assets to your listings that will make your overall listing quality way better.
+
+110
+00:11:06,200 --> 00:11:11,600
+Now, depending on what it is that you're doing, you're going to have to probably take a slightly different approach from me.
+
+111
+00:11:11,600 --> 00:11:17,600
+But I've got two workflows that I use that speed up the process for enriching my data significantly.
+
+112
+00:11:17,600 --> 00:11:28,299
+Now, the first one that I'm going to show you is what I have used in order to get images and logos for different races that I'm listing on my running directory.
+
+113
+00:11:28,299 --> 00:11:36,299
+And that is with a tool called Apify. So, Apify is a tool that you can use to scrape data from various sources.
+
+114
+00:11:36,299 --> 00:11:43,100
+So if we're going to have a look here, you can see that you've got a way to scrape and download Instagram posts.
+
+115
+00:11:43,100 --> 00:11:50,600
+You can get information from, you know, Facebook posts and really they've got tons and tons of different actors.
+
+116
+00:11:50,600 --> 00:11:59,299
+And basically what it does is it runs a script that basically retrieves information about certain, you know, data that is hosted online.
+
+117
+00:11:59,299 --> 00:12:11,899
+Now, my use case was going to be to find the Facebook pages for the different races that I was trying to promote and to then pull information from that particular Facebook page.
+
+118
+00:12:11,899 --> 00:12:21,500
+Now, the reason why I chose Facebook is because when I was doing my research, I noticed that pretty much all of the races used Facebook to promote the event.
+
+119
+00:12:21,500 --> 00:12:23,500
+One, because it's obviously free to use.
+
+120
+00:12:23,500 --> 00:12:30,600
+But two, if you wanted to use any form of paid advertising on Facebook or Instagram, you are required to have a Facebook page.
+
+121
+00:12:30,600 --> 00:12:37,899
+And so when I was doing my research, I found that most races uploaded really high quality race images as their banner image.
+
+122
+00:12:37,899 --> 00:12:44,000
+Plus, I had a logo that I could then also use in my race card on the running directory.
+
+123
+00:12:44,000 --> 00:12:58,299
+And so what I can then do with a tool like Apify is to essentially run a workflow that pulls the information from that particular Facebook page and then allows me to store it inside of my database.
+
+124
+00:12:58,299 --> 00:13:01,799
+Now, let me show you a quick little example for how this works.
+
+125
+00:13:01,799 --> 00:13:07,200
+I'm going to use in this example, my own website, my own Facebook page, the Unicorn Factory NZ.
+
+126
+00:13:07,200 --> 00:13:15,600
+All I need to do is just define the URL of the Facebook page, which is why it's important to find data sources where you can potentially find social links.
+
+127
+00:13:15,600 --> 00:13:18,000
+And then you just go ahead and run it.
+
+128
+00:13:18,000 --> 00:13:21,600
+Now, this process usually takes anywhere between 10 to 15 seconds.
+
+129
+00:13:21,600 --> 00:13:26,000
+And as soon as the run is done, you'll see all of the information that was found.
+
+130
+00:13:26,000 --> 00:13:29,399
+So, for example, it will tell you a thing like the business service area.
+
+131
+00:13:29,399 --> 00:13:32,000
+It will retrieve the cover photo.
+
+132
+00:13:32,000 --> 00:13:35,500
+It will also retrieve, you know, the profile image.
+
+133
+00:13:35,500 --> 00:13:42,000
+And it's basically data that you can now use to store inside of your database in order to enrich your listing.
+
+134
+00:13:42,000 --> 00:13:46,600
+Now, here's where Apify gets particularly powerful.
+
+135
+00:13:46,600 --> 00:13:50,399
+Now, not just do you run it through the actual Apify interface.
+
+136
+00:13:50,399 --> 00:13:57,399
+You can actually connect your Apify account to a make.com workflow and you can then basically automate this entire process.
+
+137
+00:13:57,399 --> 00:14:10,799
+So, if you found a way to find a social link or in my case a Facebook link for a particular running event, then what I can do is I can actually initiate my Apify actor to basically conduct the Facebook search.
+
+138
+00:14:10,799 --> 00:14:13,000
+And so you need to set this up in two workflows.
+
+139
+00:14:13,000 --> 00:14:20,200
+Number one is to go out there and actually specify the URL of the page that you want to run.
+
+140
+00:14:20,200 --> 00:14:31,200
+And so what I've done is I've basically connected it to a web hoc that then retrieves the air table record that I want to do research on or I want to enrich.
+
+141
+00:14:31,200 --> 00:14:36,100
+And it will then pass through the Facebook URL and then initiate the search.
+
+142
+00:14:36,100 --> 00:14:42,299
+The next step in it is to then set up a separate workflow where it monitors for different runs.
+
+143
+00:14:42,299 --> 00:14:47,000
+So, basically monitors whether or not my actor found a result.
+
+144
+00:14:47,000 --> 00:14:53,000
+And then once it does, it goes through the process of retrieving all of the data that was found.
+
+145
+00:14:53,000 --> 00:14:55,899
+So, basically what I showed you before in Apify.
+
+146
+00:14:55,899 --> 00:15:13,899
+It then finds the associated air table record by the actual Facebook URL and it then goes ahead and it updates the listing that I wanted to enrich with information like the cover photo URL, with the website URL and a whole bunch of other data.
+
+147
+00:15:13,899 --> 00:15:23,600
+That is a super simple and effective way to enrich your data with information that you can then later on use on your site.
+
+148
+00:15:23,600 --> 00:15:29,600
+Now, the second tool that I use to enrich data is going to be an absolute crazy one.
+
+149
+00:15:29,600 --> 00:15:33,299
+So, if you have made it to this point of the video, congratulations.
+
+150
+00:15:33,299 --> 00:15:42,399
+I actually think that this one here is really what will allow you to take the quality of your listings from, you know, 60% to like 90%.
+
+151
+00:15:42,399 --> 00:15:45,100
+So, this here is going to be an absolute sick one.
+
+152
+00:15:45,100 --> 00:15:57,700
+So, one of the things that you're going to run into is that as you're pulling data in from different data sources, again, there's going to be so much information missing that might be important to create, you know, for example, listing pages.
+
+153
+00:15:57,700 --> 00:16:09,200
+Now, for example, with the different races that I found, I would find things like the name of the race, you know, the title, where it was, maybe the event date, and that was pretty much it.
+
+154
+00:16:09,200 --> 00:16:14,299
+But if I really want to enrich the data, what I want to do is do even more research.
+
+155
+00:16:14,299 --> 00:16:24,200
+And so, in this particular case, what I was looking for is to find out, hey, what are the actual individual events that are going on during this particular race weekend?
+
+156
+00:16:24,200 --> 00:16:30,000
+And a tool that you can use to do deeper research is a tool called Perplexity AI.
+
+157
+00:16:30,000 --> 00:16:45,899
+Now, Perplexity AI works in a very similar way to ChatGPT, with the main difference being that instead of it just using, you know, the data that it was trained with to provide the answer, it actually goes and looks for up-to-date and accurate sources.
+
+158
+00:16:45,899 --> 00:17:02,899
+So, what I could do is I could basically jump in here and say, can you tell me what running events are on during, and then I'll just go ahead, paste the name of the event and where it is.
+
+159
+00:17:02,899 --> 00:17:13,900
+And then I can specify things like, tell me the distance, time of start, and entry fee, if you can find it.
+
+160
+00:17:13,900 --> 00:17:20,900
+And then what I'll do is I'll just go ahead, I'll go and make a search, and what it will do is it will go and research all of these different data sources.
+
+161
+00:17:20,900 --> 00:17:25,900
+So, it will look up Instagram, it will look up Facebook, it will look up a whole bunch of different sources.
+
+162
+00:17:25,900 --> 00:17:28,900
+It will look up the actual race website as well.
+
+163
+00:17:28,900 --> 00:17:31,900
+And what it will do is it will return all of the information.
+
+164
+00:17:31,900 --> 00:17:35,900
+So, for example, it will tell me, hey, it's scheduled for this date, it's got these events.
+
+165
+00:17:35,900 --> 00:17:42,900
+So, we've got, you know, like the road race, and then we've got the distance, and we've got the entry fee, and we've got the start times, and all that kind of stuff.
+
+166
+00:17:42,900 --> 00:17:49,900
+And I can now use all of this information to now take my data even further.
+
+167
+00:17:49,900 --> 00:17:58,900
+And so, what you can do is you can now plug the particular workflow that I just showed you into a make.com workflow.
+
+168
+00:17:58,900 --> 00:18:02,900
+Okay, so here's how the automated version of this would look.
+
+169
+00:18:02,900 --> 00:18:05,900
+The first thing is I'll trigger my workflow from inside of your table.
+
+170
+00:18:05,900 --> 00:18:10,900
+I'll then retrieve the information about the race that I want to do deeper research on.
+
+171
+00:18:10,900 --> 00:18:14,900
+And then what I'll do is I'll connect my Perplexity AI prompt.
+
+172
+00:18:14,900 --> 00:18:21,900
+And so, basically, what I'm doing is I'm asking the exact same question that I just showed you in the interface.
+
+173
+00:18:21,900 --> 00:18:26,900
+I'm saying, hey, can you get me all of the information about the following running events in this format?
+
+174
+00:18:26,900 --> 00:18:30,900
+So, the race name, distance, start date, start time, registration link, and entry fee.
+
+175
+00:18:30,900 --> 00:18:33,900
+Then what I do is it will go and do its research.
+
+176
+00:18:33,900 --> 00:18:45,900
+It will find a response, and then I use an OpenAI integration to take that response and to format it in a way that makes it easier for me to store inside of my database.
+
+177
+00:18:45,900 --> 00:18:50,900
+So, for example, I'll say, hey, I need you to transform race details into a JSON array.
+
+178
+00:18:50,900 --> 00:18:53,900
+Each individual race should include the following keys.
+
+179
+00:18:53,900 --> 00:18:58,900
+Race name, race distance, race date, race time, event link, entry fee.
+
+180
+00:18:58,900 --> 00:19:08,900
+And what it will do then is it will go ahead and it will take the message or the response from Perplexity AI and transform it into that format.
+
+181
+00:19:08,900 --> 00:19:13,900
+Now, another thing that I do, which I think is super important, is to actually save these citations.
+
+182
+00:19:13,900 --> 00:19:26,900
+So, all of the links that it provides you, it will actually give you in the API call so that you can then later on reference it to see where that data is coming from.
+
+183
+00:19:26,900 --> 00:19:33,900
+Once that is done, what you can do is you can then take the information and store it inside of your ear table database.
+
+184
+00:19:33,900 --> 00:19:41,900
+Now, in my case, what I did was I actually created a separate table for the individual race events.
+
+185
+00:19:41,900 --> 00:19:54,900
+And once I have those individual race events, it basically becomes a linked record that I can then later on use to then basically create more detail-rich profile pages for individual races.
+
+186
+00:19:54,900 --> 00:19:58,900
+And so this is basically what this ends up looking like.
+
+187
+00:19:58,900 --> 00:20:04,900
+It's a link to a whole different table and it's got all of the information that was retrieved by the API call.
+
+188
+00:20:04,900 --> 00:20:16,900
+And so essentially what I'm doing is I'm doing deeper research here and I'm using different sources online to basically retrieve information that I can then use to store even more data inside of your table.
+
+189
+00:20:16,900 --> 00:20:27,900
+Now, as you can imagine, the use cases for this are endless. If you want to do deeper research into, for example, the business that you're listing on your site, you can just run a workflow like this.
+
+190
+00:20:27,900 --> 00:20:31,900
+You can specify what information you're looking for and then you can just store it inside of your database.
+
+191
+00:20:31,900 --> 00:20:40,900
+This is how you go from having a content-poor site or content-poor listing to having a super content-rich listing.
+
+192
+00:20:40,900 --> 00:20:49,900
+It goes without saying that you need to keep an eye on the data that's being imported because from time to time it's using data sources or data points that are inaccurate.
+
+193
+00:20:49,900 --> 00:20:53,900
+And so you just want to make sure that you have a way to keep an eye on what's going on.
+
+194
+00:20:53,900 --> 00:20:59,900
+But this here is a complete game changer when it comes to importing data.
+
+195
+00:20:59,900 --> 00:21:09,900
+OK, now, before I show you the last step in managing all your data, I wanted to quickly let you know that I am actually creating the written version of this guide on my website.
+
+196
+00:21:09,900 --> 00:21:14,900
+So with this last video, I basically posted it in here.
+
+197
+00:21:14,900 --> 00:21:18,900
+And basically, if you're someone that just needs this in written format, it's all in here.
+
+198
+00:21:18,900 --> 00:21:23,900
+Not just do I add information from the actual video in here.
+
+199
+00:21:23,900 --> 00:21:27,900
+I'll also be adding things like scripts when it comes up.
+
+200
+00:21:27,900 --> 00:21:30,900
+I'll also be adding links to different resources.
+
+201
+00:21:30,900 --> 00:21:37,900
+So one thing that I would ask you to do if you are interested in learning more about this is to just head on over to my website.
+
+202
+00:21:37,900 --> 00:21:45,900
+Subscribe to my inbox so that I can notify you whenever new things are coming out like new guides that I'm creating or, you know, whenever I'm updating this.
+
+203
+00:21:45,900 --> 00:21:51,900
+And also, if you have questions about particular videos, send me an email.
+
+204
+00:21:51,900 --> 00:22:00,900
+OK. And then what I'll do is I'll add it to a frequently asked questions section that I'll add to each video where I go into more details answering questions that you might have.
+
+205
+00:22:00,900 --> 00:22:05,900
+Another place to ask questions is also inside of the comments section on Facebook.
+
+206
+00:22:05,900 --> 00:22:08,900
+I'd appreciate questions there a lot because it helps with engagement.
+
+207
+00:22:08,900 --> 00:22:19,900
+But with that being said, let's move on to the last point in populating your database with high quality data, which is to make sure that your data is clean.
+
+208
+00:22:19,900 --> 00:22:30,900
+OK. So the final step that we need to take care of when it comes to making sure that the content in our directory is of the absolute highest standard is to clean our data.
+
+209
+00:22:30,900 --> 00:22:32,900
+Now, what does this mean?
+
+210
+00:22:32,900 --> 00:22:36,900
+So the first step that we went through was to find and populate our database.
+
+211
+00:22:36,900 --> 00:22:41,900
+Then we use Perplexity and APIify to enrich our data.
+
+212
+00:22:41,900 --> 00:22:48,900
+But one of the things that you're going to notice is that as you're importing data from different sources, it's just going to import in different formats.
+
+213
+00:22:48,900 --> 00:22:55,900
+Now, this was an issue that I ran into with, you know, importing race information specifically.
+
+214
+00:22:55,900 --> 00:22:59,900
+What will happen is you're just going to get the information in a whole bunch of different formats.
+
+215
+00:22:59,900 --> 00:23:03,900
+So, for example, your date string might be formatted incorrectly.
+
+216
+00:23:03,900 --> 00:23:06,900
+Sometimes certain information won't be imported at all.
+
+217
+00:23:06,900 --> 00:23:14,900
+One thing that I found myself in, you know, a lot is, you know, just how the race event distances were specified.
+
+218
+00:23:14,900 --> 00:23:16,900
+So sometimes it would say half marathon.
+
+219
+00:23:16,900 --> 00:23:18,900
+Other times it would say the exact distance.
+
+220
+00:23:18,900 --> 00:23:21,900
+Other times it would like specify the distance in miles.
+
+221
+00:23:21,900 --> 00:23:24,900
+Other times it would specify as 5K.
+
+222
+00:23:24,900 --> 00:23:32,900
+So ultimately all of the ways that the information was provided from these different sources was super inconsistent.
+
+223
+00:23:32,900 --> 00:23:41,900
+And as you are importing inconsistent data into your actual directory site, it can lead to issues with the overall user experience.
+
+224
+00:23:41,900 --> 00:23:44,900
+So for starters, it just looks unprofessional, you know.
+
+225
+00:23:44,900 --> 00:23:48,900
+It just looks inconsistent and it just kind of looks like, you know, just slapped some data in there.
+
+226
+00:23:48,900 --> 00:23:55,900
+But more importantly, the problem that you'll run into is when it comes to having features like search and filtering.
+
+227
+00:23:55,900 --> 00:24:04,900
+So at the moment, if I, you know, select my search and filters, everything works fine because I've actually formatted all of the information in a way that's consistent.
+
+228
+00:24:04,900 --> 00:24:10,900
+So a really specific example is if I were to like import this race without formatting the information,
+
+229
+00:24:10,900 --> 00:24:16,900
+it actually does have a half marathon in here but it's specified as 21.097 kilometers,
+
+230
+00:24:16,900 --> 00:24:27,900
+which means that if I were to filter it by half marathon, it would simply not show up because the actual event itself is not specified as such in my listing.
+
+231
+00:24:27,900 --> 00:24:37,900
+Now you're going to run into this issue a lot in a lot of different ways but this problem is very easily fixed by using scripts.
+
+232
+00:24:37,900 --> 00:24:42,900
+Now this is going to be another example of why Airtable is super valuable.
+
+233
+00:24:42,900 --> 00:24:52,900
+But what we can use in Airtable is a feature called Airtable Automations that allows us to set up workflows that we can use for, in this case, data cleaning.
+
+234
+00:24:52,900 --> 00:25:03,900
+So the way it works is we head over to our automation tab and in here you'll see that we have access to basically an automation tool like make.com or Zapier.
+
+235
+00:25:03,900 --> 00:25:07,900
+Now what I'm doing here is I am setting up a workflow that has a trigger.
+
+236
+00:25:07,900 --> 00:25:14,900
+So in my case, the trigger is when I set the action field inside of my run clubs to enrich data.
+
+237
+00:25:14,900 --> 00:25:18,900
+And then what I do is I use the scripting block.
+
+238
+00:25:18,900 --> 00:25:27,900
+Now the scripting block allows you to simply make a JavaScript script that you can then use to do various different things.
+
+239
+00:25:27,900 --> 00:25:34,900
+Now the reason why this is so powerful is because it actually allows you to make API calls to third-party tools.
+
+240
+00:25:34,900 --> 00:25:40,900
+Now an API call that I am making in this particular example is to OpenAI.
+
+241
+00:25:40,900 --> 00:25:44,900
+And OpenAI is the tool that I'm using to format all of my information.
+
+242
+00:25:44,900 --> 00:25:50,900
+And so you can see in here I've got a prompt that basically describes what it is that I want OpenAI to do.
+
+243
+00:25:50,900 --> 00:25:56,900
+So what I'm saying is, hey, you're an assistant that analyzes text and returns structured data in JSON format.
+
+244
+00:25:56,900 --> 00:26:02,900
+Then I say, please analyze the following run club description and extract the following information in JSON format.
+
+245
+00:26:02,900 --> 00:26:06,900
+And then I basically say, I want you to tell me the city, and this is the format I want it in.
+
+246
+00:26:06,900 --> 00:26:09,900
+Then I want you to tell me the meeting days and times.
+
+247
+00:26:09,900 --> 00:26:11,900
+Then this is the format I want you to provide it in.
+
+248
+00:26:11,900 --> 00:26:15,900
+Then I want you to provide me the meeting location.
+
+249
+00:26:15,900 --> 00:26:17,900
+This is the format I want it in.
+
+250
+00:26:17,900 --> 00:26:20,900
+And then I want you to also find tags.
+
+251
+00:26:20,900 --> 00:26:22,900
+And this is another use case for data cleaning.
+
+252
+00:26:22,900 --> 00:26:31,900
+If you have something like tags, then you can also ask it to basically generate tags based on something like a description.
+
+253
+00:26:31,900 --> 00:26:38,900
+So if, for example, there's a beer run club, you can apply that tag, and it will then automatically apply when you're filtering.
+
+254
+00:26:38,900 --> 00:26:44,900
+And so what you can do here is you can really take the input that you're getting from these different data sources
+
+255
+00:26:44,900 --> 00:26:53,900
+and then using a data cleaning workflow like this to basically format it in a way that will work across all of your different tools.
+
+256
+00:26:53,900 --> 00:26:55,900
+And that is simply how it works.
+
+257
+00:26:55,900 --> 00:26:59,900
+Now, just to help you understand how I actually generate this script,
+
+258
+00:26:59,900 --> 00:27:02,900
+I do have a little bit of an understanding of how these scripts work.
+
+259
+00:27:02,900 --> 00:27:09,900
+But if you describe to ChatGPT what you want your script to do, you can very easily recreate these.
+
+260
+00:27:09,900 --> 00:27:15,900
+And you will likely run into errors, but just ask it to basically provide you console logs along the way,
+
+261
+00:27:15,900 --> 00:27:21,900
+which is basically it prints out the results from each step, and then you'll always see where the issue is.
+
+262
+00:27:21,900 --> 00:27:27,900
+And so ultimately what I have done here is I have specified the record that I want to update.
+
+263
+00:27:27,900 --> 00:27:32,900
+I've then pulled in information about that particular record, for example, the description.
+
+264
+00:27:32,900 --> 00:27:39,900
+And then I made my API call to go ahead and to basically format it based on the description that was pulled,
+
+265
+00:27:39,900 --> 00:27:42,900
+and it will just show you along the way what it finds.
+
+266
+00:27:42,900 --> 00:27:46,900
+So it found this record, then it found this description, then it made the call to OpenAI,
+
+267
+00:27:46,900 --> 00:27:56,900
+and then it returned my results, and then it passed my results and stored it back into the respective fields inside of YearTable.
+
+268
+00:27:56,900 --> 00:28:02,900
+And just like that, you are able to take your data and clean it.
+
+269
+00:28:02,900 --> 00:28:07,900
+Okay, and so those are the four workflows that I'm currently using to find and populate my database,
+
+270
+00:28:07,900 --> 00:28:11,900
+to enrich my data with more information and assets,
+
+271
+00:28:11,900 --> 00:28:18,900
+and to then also clean my data to make sure that the overall usability on my site is better.
+
+272
+00:28:18,900 --> 00:28:24,900
+Now, as you can see, this process is definitely a bit more manual than just getting a scraping tool
+
+273
+00:28:24,900 --> 00:28:27,900
+and pulling mass amounts of data from different sources,
+
+274
+00:28:27,900 --> 00:28:34,900
+but it allows you to make sure that the overall quality of your data is significantly higher,
+
+275
+00:28:34,900 --> 00:28:43,900
+and that is ultimately what I think is the key to success when it comes to building great directory sites or businesses in general.
+
+276
+00:28:43,900 --> 00:28:45,900
+Now, this is it for this video.
+
+277
+00:28:45,900 --> 00:28:49,900
+If there are any questions, please do let me know.
+
+278
+00:28:49,900 --> 00:28:58,900
+Also, go and check out my written guide for this particular video where I'll be basically linking to different resources and all those types of things.
+
+279
+00:28:58,900 --> 00:29:07,900
+And also, please let me know in the comments down below what the next thing is that you want to learn about building out No-Code directory sites.
+
+280
+00:29:07,900 --> 00:29:14,900
+I am super keen to make more videos around this, and if you have any specific questions or challenges that you have along the way,
+
+281
+00:29:14,900 --> 00:29:17,900
+I am more than happy to help.
+
+282
+00:29:17,900 --> 00:29:22,900
+With that being said, thank you so much for sticking around for the entire video, and I'll see you back here for the next one.
+

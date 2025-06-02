@@ -1,0 +1,908 @@
+1
+00:00:00,000 --> 00:00:04,009
+You may not realize it, but when you're building AI agents,
+
+2
+00:00:04,059 --> 00:00:05,830
+you're actually building
+
+3
+00:00:05,990 --> 00:00:06,000
+microservices.
+
+4
+00:00:07,290 --> 00:00:10,589
+Of course, not every AI agent has to be a microservice,
+
+5
+00:00:11,138 --> 00:00:12,750
+but I believe it should,
+
+6
+00:00:13,099 --> 00:00:14,699
+especially for production.
+
+7
+00:00:14,900 --> 00:00:20,260
+Because to build any modern AI system, we will need multiple agents
+
+8
+00:00:20,750 --> 00:00:24,689
+to exchange context while working independently to
+
+9
+00:00:24,690 --> 00:00:25,960
+achieve the system goal.
+
+10
+00:00:26,530 --> 00:00:30,048
+I'm Adi Polak with Confluent, and in this video, I'm going to
+
+11
+00:00:30,059 --> 00:00:32,529
+briefly introduce what AI agents are
+
+12
+00:00:32,768 --> 00:00:35,509
+and how you can build your modern AI architecture
+
+13
+00:00:35,719 --> 00:00:37,029
+and take it to production,
+
+14
+00:00:37,289 --> 00:00:38,640
+leveraging event-driven microservices.
+
+15
+00:00:45,139 --> 00:00:47,057
+So what is an AI agent?
+
+16
+00:00:47,267 --> 00:00:51,829
+AI agent, essentially, is a specific case of an AI application.
+
+17
+00:00:52,420 --> 00:00:52,659
+Now,
+
+18
+00:00:52,679 --> 00:00:57,990
+this agent will usually have tools, it will get a specific
+
+19
+00:00:57,990 --> 00:00:59,590
+goal, and it will be able to
+
+20
+00:00:59,640 --> 00:01:05,170
+act and plan in order to achieve objectives autonomously.
+
+21
+00:01:05,450 --> 00:01:07,030
+And in order for us to get the
+
+22
+00:01:07,039 --> 00:01:12,450
+best results out of each agent, each one of them has to be fine-tuned
+
+23
+00:01:12,569 --> 00:01:14,689
+and focused to do one specific
+
+24
+00:01:14,719 --> 00:01:15,079
+task.
+
+25
+00:01:15,829 --> 00:01:20,120
+So overall, all these agents together build multi-agent
+
+26
+00:01:20,120 --> 00:01:22,670
+systems that work collaboratively
+
+27
+00:01:22,700 --> 00:01:25,109
+to achieve our goal.
+
+28
+00:01:25,888 --> 00:01:30,090
+Now, if this sounds complicated, let's take a look at an example
+
+29
+00:01:30,099 --> 00:01:32,188
+so we can better understand what it is that we're building.
+
+30
+00:01:32,728 --> 00:01:35,527
+Let's assume we're working for Badflix.
+
+31
+00:01:36,125 --> 00:01:42,658
+Badflix has movies that got the lowest rated score on the planet.
+
+32
+00:01:42,777 --> 00:01:43,787
+We are responsible to
+
+33
+00:01:43,798 --> 00:01:45,397
+build their agentic system.
+
+34
+00:01:45,828 --> 00:01:49,698
+And here, we get different prompts in order to understand what's
+
+35
+00:01:49,698 --> 00:01:51,298
+happening with our sales cycle.
+
+36
+00:01:51,537 --> 00:01:55,067
+The first prompt that we're going to get is, predict sales for the next
+
+37
+00:01:55,067 --> 00:01:55,777
+three months.
+
+38
+00:01:56,527 --> 00:01:59,888
+Now, how do we take this prompt and transfer it into an actual answer?
+
+39
+00:02:00,378 --> 00:02:00,968
+So this is my
+
+40
+00:02:00,968 --> 00:02:01,468
+prompt.
+
+41
+00:02:02,337 --> 00:02:07,158
+I'm going to ingest this text into a controller.
+
+42
+00:02:07,927 --> 00:02:10,578
+A controller is a smart agent that
+
+43
+00:02:10,598 --> 00:02:13,668
+can wake up and discover what different tools it has in
+
+44
+00:02:13,668 --> 00:02:14,788
+its environment and what the
+
+45
+00:02:14,788 --> 00:02:16,268
+resources are it can access.
+
+46
+00:02:17,228 --> 00:02:20,538
+The controller will need to work with a planner.
+
+47
+00:02:20,828 --> 00:02:21,837
+The planner is going to
+
+48
+00:02:21,837 --> 00:02:24,497
+build a plan in order to answer the answer.
+
+49
+00:02:24,627 --> 00:02:27,608
+Here, specifically, it's going to tell us that we need
+
+50
+00:02:27,608 --> 00:02:31,768
+to start working against a database and turn some of these texts
+
+51
+00:02:31,828 --> 00:02:34,057
+into a dedicated SQL statement
+
+52
+00:02:34,288 --> 00:02:36,758
+that's going to look at the sales from the previous year.
+
+53
+00:02:37,268 --> 00:02:39,997
+Now, we also need every agentic AI system
+
+54
+00:02:39,997 --> 00:02:41,608
+to have some feedback loop.
+
+55
+00:02:43,018 --> 00:02:45,877
+So here, specifically, we're going to tap into a judge.
+
+56
+00:02:45,918 --> 00:02:48,457
+The judge is going to observe the input, the output,
+
+57
+00:02:48,457 --> 00:02:49,487
+and what was the plan.
+
+58
+00:02:49,798 --> 00:02:50,228
+And it's going
+
+59
+00:02:50,228 --> 00:02:51,897
+to tell us if we did good or not.
+
+60
+00:02:52,048 --> 00:02:54,567
+Here, specifically, the judge can come and say,
+
+61
+00:02:54,798 --> 00:02:57,968
+hey, you know, it's actually in order to predict the sales for
+
+62
+00:02:57,968 --> 00:02:59,427
+the next three months, we need to
+
+63
+00:02:59,427 --> 00:03:00,978
+look at the marketing campaign.
+
+64
+00:03:01,538 --> 00:03:04,647
+So we turn back a response saying, this answer is not good enough.
+
+65
+00:03:04,927 --> 00:03:08,217
+And this is what makes this system a cyclical system
+
+66
+00:03:08,448 --> 00:03:10,657
+with internal feedback loop.
+
+67
+00:03:11,318 --> 00:03:11,907
+Now,
+
+68
+00:03:11,997 --> 00:03:14,147
+our smart system also needs to handle churn.
+
+69
+00:03:14,388 --> 00:03:17,268
+So now we're going to get a prompt saying, hey,
+
+70
+00:03:17,388 --> 00:03:23,008
+build this alert for identifying churn customers, churn
+
+71
+00:03:23,008 --> 00:03:25,377
+subscriptions a week in advance.
+
+72
+00:03:25,388 --> 00:03:25,997
+So this is
+
+73
+00:03:25,997 --> 00:03:30,728
+another prompt that I'm going to send to my controller.
+
+74
+00:03:30,828 --> 00:03:31,937
+My controller is going to take it,
+
+75
+00:03:31,937 --> 00:03:34,027
+it's going to process it, it's going to send it to the planner.
+
+76
+00:03:34,437 --> 00:03:35,897
+The planner now is going to repeat
+
+77
+00:03:35,897 --> 00:03:39,728
+and say, in order for me to identify churn from my entertainment
+
+78
+00:03:39,728 --> 00:03:41,288
+system, I need to be able to
+
+79
+00:03:41,307 --> 00:03:43,067
+access click streams.
+
+80
+00:03:43,348 --> 00:03:46,918
+Because click streams tell me if this user specifically is actually using
+
+81
+00:03:46,918 --> 00:03:47,608
+their platform.
+
+82
+00:03:47,687 --> 00:03:50,828
+On top of that, I need access to chat history, I need
+
+83
+00:03:50,828 --> 00:03:52,038
+access to support tickets,
+
+84
+00:03:52,057 --> 00:03:52,698
+and so on.
+
+85
+00:03:53,018 --> 00:03:56,218
+So I need to be able to process data streaming.
+
+86
+00:03:56,518 --> 00:03:58,168
+This data streaming handler is going
+
+87
+00:03:58,177 --> 00:04:02,877
+to give me access to process any real-time information.
+
+88
+00:04:02,948 --> 00:04:04,837
+And not only that, now we have a
+
+89
+00:04:04,837 --> 00:04:07,147
+new functionality that we need to address.
+
+90
+00:04:07,967 --> 00:04:09,807
+And this is alerts.
+
+91
+00:04:10,098 --> 00:04:11,557
+Based on this data streaming,
+
+92
+00:04:11,867 --> 00:04:15,087
+I want to fire an alert that is going to trigger the system,
+
+93
+00:04:15,087 --> 00:04:16,348
+that is going to tell me that now
+
+94
+00:04:16,348 --> 00:04:19,548
+this is going to be in so-and-so churn within my subscribers.
+
+95
+00:04:19,557 --> 00:04:21,228
+So Badflix can actually take
+
+96
+00:04:21,228 --> 00:04:22,447
+an action based on that.
+
+97
+00:04:22,447 --> 00:04:24,778
+This system overall is going to work.
+
+98
+00:04:25,207 --> 00:04:27,098
+But what happens now when I need
+
+99
+00:04:27,187 --> 00:04:29,668
+to change the planner, for example?
+
+100
+00:04:30,018 --> 00:04:32,298
+I want to have a v2 of this planner.
+
+101
+00:04:32,778 --> 00:04:33,858
+And if you think about
+
+102
+00:04:33,858 --> 00:04:37,288
+it for a second, we actually, what we built here is a monolith.
+
+103
+00:04:37,778 --> 00:04:39,088
+And monoliths are not bad,
+
+104
+00:04:39,137 --> 00:04:39,867
+they can work.
+
+105
+00:04:39,877 --> 00:04:42,968
+Each one of them can be a function, each one of them can be a class.
+
+106
+00:04:43,307 --> 00:04:45,946
+But now that I want to upgrade my planner, that means that I'm
+
+107
+00:04:45,946 --> 00:04:47,687
+going to need to go and deploy
+
+108
+00:04:47,968 --> 00:04:48,947
+all of them together.
+
+109
+00:04:48,947 --> 00:04:51,908
+So now I have dependencies on deployment timeline.
+
+110
+00:04:52,338 --> 00:04:55,447
+There could be that I also have dependencies on hardware, because
+
+111
+00:04:55,447 --> 00:04:56,918
+here, let's say this planner
+
+112
+00:04:56,918 --> 00:05:01,788
+is smart enough to use an LLM, external resource that helps
+
+113
+00:05:01,788 --> 00:05:03,028
+me calculate what I need.
+
+114
+00:05:03,327 --> 00:05:07,358
+That means that the application itself can actually do well with
+
+115
+00:05:07,358 --> 00:05:10,348
+a CPU, cheaper, easier to access.
+
+116
+00:05:10,887 --> 00:05:15,468
+Now this SQL handler, it's small enough functionality
+
+117
+00:05:15,468 --> 00:05:17,038
+here that I can actually
+
+118
+00:05:17,038 --> 00:05:20,838
+use small language model, which means for this specific
+
+119
+00:05:20,838 --> 00:05:23,377
+thing, I will need a GPU.
+
+120
+00:05:23,858 --> 00:05:27,048
+So you can see how all these dependencies are already making it
+
+121
+00:05:27,088 --> 00:05:29,018
+harder for me to scale the system.
+
+122
+00:05:29,377 --> 00:05:32,278
+So I definitely need to move from monolith to a microservice.
+
+123
+00:05:32,677 --> 00:05:34,468
+Now one of the ways to communicate
+
+124
+00:05:34,478 --> 00:05:37,367
+in a microservice, is through request response.
+
+125
+00:05:38,278 --> 00:05:39,317
+But we've done one before.
+
+126
+00:05:39,707 --> 00:05:41,637
+We know this request response
+
+127
+00:05:41,668 --> 00:05:43,927
+is going to get us stuck in slower system.
+
+128
+00:05:44,307 --> 00:05:46,747
+Because actually I'm adding this dependency
+
+129
+00:05:46,757 --> 00:05:49,327
+in between the planner and the controller, in
+
+130
+00:05:49,327 --> 00:05:52,038
+between those entities.
+
+131
+00:05:52,088 --> 00:05:53,268
+And so I want to
+
+132
+00:05:53,497 --> 00:05:55,557
+move away from these dependencies.
+
+133
+00:05:55,577 --> 00:05:58,658
+I want to completely decouple this system.
+
+134
+00:05:59,007 --> 00:06:03,637
+This is where I want to start using event-driven architecture.
+
+135
+00:06:03,798 --> 00:06:05,257
+What is an event-driven architecture?
+
+136
+00:06:05,288 --> 00:06:07,608
+And what do I need in order to be successful with it?
+
+137
+00:06:08,038 --> 00:06:10,088
+The first thing that I need, I will need
+
+138
+00:06:10,307 --> 00:06:12,327
+an immutable event log.
+
+139
+00:06:12,788 --> 00:06:18,668
+So here I have my infinite immutable event log and I will have an agent
+
+140
+00:06:19,507 --> 00:06:23,997
+writing events and an agent consuming those events.
+
+141
+00:06:24,117 --> 00:06:26,187
+And if it sounds familiar, it's because
+
+142
+00:06:26,228 --> 00:06:30,478
+yeah, I mean the best system for managing events is
+
+143
+00:06:30,497 --> 00:06:32,213
+absolutely Apache Kafka.
+
+144
+00:06:32,247 --> 00:06:33,327
+So now I have these
+
+145
+00:06:33,507 --> 00:06:33,848
+events.
+
+146
+00:06:33,848 --> 00:06:36,548
+This is the first step of taking this architecture and
+
+147
+00:06:36,548 --> 00:06:37,858
+turning it into something that
+
+148
+00:06:37,858 --> 00:06:40,627
+is more applicable for production that I can actually scale.
+
+149
+00:06:40,737 --> 00:06:42,617
+And now that I have Kafka, you know
+
+150
+00:06:42,617 --> 00:06:42,867
+what?
+
+151
+00:06:43,518 --> 00:06:47,367
+I can actually start tapping into Kafka Connect.
+
+152
+00:06:47,987 --> 00:06:51,007
+And Kafka Connect will enable me to build
+
+153
+00:06:51,007 --> 00:06:57,617
+this real-time knowledge system that will later on be available
+
+154
+00:06:57,617 --> 00:06:59,718
+for all the agents to tap into.
+
+155
+00:06:59,968 --> 00:07:03,228
+And now that we talked about knowledge systems, we can take some
+
+156
+00:07:03,228 --> 00:07:05,978
+of these applications and perhaps
+
+157
+00:07:06,038 --> 00:07:08,598
+tweak and tune it into a Flink job.
+
+158
+00:07:09,487 --> 00:07:13,768
+So Flink enables us to do processing of all of this information.
+
+159
+00:07:14,327 --> 00:07:19,257
+So here my Kafka topics are now being exposed to Flink as a table.
+
+160
+00:07:20,018 --> 00:07:21,627
+So Flink, my data streaming
+
+161
+00:07:21,627 --> 00:07:22,707
+processing engine.
+
+162
+00:07:22,957 --> 00:07:25,648
+I can also use it for batch but this is on a different day.
+
+163
+00:07:25,817 --> 00:07:26,538
+And one of the
+
+164
+00:07:26,538 --> 00:07:30,077
+interesting functionality, it can work against an LLM.
+
+165
+00:07:30,478 --> 00:07:32,968
+So Flink AI inference enables us to take some
+
+166
+00:07:32,968 --> 00:07:36,207
+of the data, send it to an LLM, and get back a response.
+
+167
+00:07:36,788 --> 00:07:38,677
+So this is very similar to the planner
+
+168
+00:07:38,697 --> 00:07:41,427
+because now that we move this communication between the controller
+
+169
+00:07:41,427 --> 00:07:42,567
+to the planner to actually
+
+170
+00:07:42,567 --> 00:07:45,718
+be a Kafka topic here, Flink can take it and build the
+
+171
+00:07:45,778 --> 00:07:47,387
+planner as a Flink app.
+
+172
+00:07:47,668 --> 00:07:48,617
+And this is not all.
+
+173
+00:07:48,838 --> 00:07:52,187
+Some of the challenges that we always have with these type of
+
+174
+00:07:52,187 --> 00:07:54,137
+applications that are based on LLM
+
+175
+00:07:54,518 --> 00:07:55,768
+is hallucinations.
+
+176
+00:07:56,117 --> 00:07:59,408
+And hallucinations is happening because a lot of
+
+177
+00:07:59,408 --> 00:08:01,187
+these LLMs were being trained
+
+178
+00:08:01,497 --> 00:08:03,168
+on previous historical data.
+
+179
+00:08:03,557 --> 00:08:06,968
+But now in order to give us a real answer, we want to ground that in
+
+180
+00:08:07,007 --> 00:08:08,148
+factual data.
+
+181
+00:08:08,737 --> 00:08:12,958
+And so there is a known pattern in the world named RAG.
+
+182
+00:08:14,577 --> 00:08:16,187
+In order for me to build RAG,
+
+183
+00:08:16,358 --> 00:08:17,858
+I need a vector database.
+
+184
+00:08:18,288 --> 00:08:21,497
+A very interesting functionality that exists in Flink is actually
+
+185
+00:08:21,507 --> 00:08:25,997
+my ability to turn this data that Flink takes and process
+
+186
+00:08:26,207 --> 00:08:27,298
+into an embedding data.
+
+187
+00:08:27,838 --> 00:08:28,538
+So Flink can
+
+188
+00:08:28,538 --> 00:08:33,847
+actually tap into an LLM through the Flink inference model and
+
+189
+00:08:33,847 --> 00:08:35,638
+ask the LLM to turn the data
+
+190
+00:08:35,707 --> 00:08:37,697
+into a dedicated embedding data.
+
+191
+00:08:38,028 --> 00:08:43,508
+Then later on, we can sync here into my Kafka topics and work
+
+192
+00:08:43,548 --> 00:08:48,857
+through Kafka Connect in order to build the full agentic RAG pattern.
+
+193
+00:08:49,207 --> 00:08:50,798
+So now my system is not only
+
+194
+00:08:50,798 --> 00:08:55,408
+scalable, not only decoupled, but now this simple architecture that
+
+195
+00:08:55,408 --> 00:08:57,817
+I've now built enables me to tap
+
+196
+00:08:57,837 --> 00:09:00,847
+into this agentic RAG solution as well.
+
+197
+00:09:01,798 --> 00:09:05,988
+All this access to data means that I need to be able to
+
+198
+00:09:05,988 --> 00:09:06,648
+govern it.
+
+199
+00:09:07,868 --> 00:09:09,197
+So I need a governed solution.
+
+200
+00:09:09,378 --> 00:09:13,587
+Now I'm not going to give admin credentials to my agents.
+
+201
+00:09:13,717 --> 00:09:16,538
+I actually need to start managing this access control.
+
+202
+00:09:16,847 --> 00:09:18,988
+So govern is going to make sure I am
+
+203
+00:09:18,998 --> 00:09:20,518
+managing this access control.
+
+204
+00:09:21,067 --> 00:09:25,857
+On top of that, I actually need to be able to put the guardrails of
+
+205
+00:09:25,898 --> 00:09:29,168
+input and output between all these communications.
+
+206
+00:09:29,587 --> 00:09:32,947
+So this is where schema registry is going to help
+
+207
+00:09:32,947 --> 00:09:35,107
+me put the guardrails in the right place.
+
+208
+00:09:35,557 --> 00:09:38,488
+Beyond that, I want to have lineage and I want to have
+
+209
+00:09:38,618 --> 00:09:39,248
+observability.
+
+210
+00:09:39,908 --> 00:09:43,648
+Through lineage, I can tell what happened in my system,
+
+211
+00:09:43,977 --> 00:09:45,197
+which event went where,
+
+212
+00:09:45,227 --> 00:09:47,768
+how did they transform, who communicated with who,
+
+213
+00:09:48,138 --> 00:09:50,628
+and that actually helps me tap into what I would
+
+214
+00:09:50,628 --> 00:09:53,807
+want to have later in the future, observability for
+
+215
+00:09:53,957 --> 00:09:55,788
+all of my system here.
+
+216
+00:09:56,648 --> 00:09:57,868
+So this is how I took
+
+217
+00:09:57,868 --> 00:10:01,087
+my monolith and I turned it not only to a microservice system,
+
+218
+00:10:01,087 --> 00:10:02,717
+but into a smart microservice
+
+219
+00:10:02,717 --> 00:10:06,577
+system, leveraging event-driven architecture.
+
+220
+00:10:06,898 --> 00:10:09,258
+So what do we need to be successful with building AI
+
+221
+00:10:09,467 --> 00:10:09,967
+agents?
+
+222
+00:10:10,057 --> 00:10:12,508
+We actually need a data streaming platform.
+
+223
+00:10:14,457 --> 00:10:17,418
+Call them agents, call them microservices.
+
+224
+00:10:17,998 --> 00:10:18,408
+If they
+
+225
+00:10:18,408 --> 00:10:23,028
+don't speak with events, they're just fancy applications with
+
+226
+00:10:23,048 --> 00:10:25,187
+LLM brains waiting to become
+
+227
+00:10:25,388 --> 00:10:25,937
+obsolete.
+
