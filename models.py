@@ -2,7 +2,13 @@ from datetime import datetime
 from flask_login import UserMixin
 from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
 from sqlalchemy import UniqueConstraint, func
-from flask_app import db
+
+# Get db instance from main module to avoid circular imports
+def get_db():
+    from main import db
+    return db
+
+db = get_db()
 
 # User model
 class User(UserMixin, db.Model):
