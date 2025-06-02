@@ -5,36 +5,42 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initTranscriptionForm() {
-    const form = document.getElementById('transcription-form');
-    const submitButton = document.getElementById('submit-button');
-    const submitSpinner = document.getElementById('submit-spinner');
-    const resultsContainer = document.getElementById('results-container');
-    const progressBar = document.getElementById('progress-bar');
-    const jobStatusBadge = document.getElementById('job-status');
-    const videoIdElement = document.getElementById('video-id');
-    const downloadSection = document.getElementById('download-section');
+    const form = document.getElementById('transcriptionForm');
+    const submitButton = document.getElementById('transcribeBtn');
+    const resultSection = document.getElementById('resultSection');
     
-    // Download links
-    const downloadTxt = document.getElementById('download-txt');
-    const downloadSrt = document.getElementById('download-srt');
-    const downloadVtt = document.getElementById('download-vtt');
+    // Check if elements exist to prevent errors
+    if (!form || !submitButton) {
+        console.log('Form elements not found, skipping initialization');
+        return;
+    }
+    
+    // Download links (these exist in the HTML)
+    const downloadTxt = document.getElementById('downloadTxt');
+    const downloadSrt = document.getElementById('downloadSrt');
+    const downloadVtt = document.getElementById('downloadVtt');
     
     // Handle form submission
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         // Get form values
-        const youtubeUrl = document.getElementById('youtube-url').value;
-        const transcriptionMode = document.getElementById('transcription-mode').value;
+        const youtubeUrl = document.getElementById('youtubeUrl').value;
+        const transcriptionMode = document.getElementById('transcriptionMode').value;
         const language = document.getElementById('language').value;
         
-        // Disable form inputs and button during processing
+        // Disable form during processing
         submitButton.disabled = true;
-        document.getElementById('youtube-url').disabled = true;
-        document.getElementById('transcription-mode').disabled = true;
-        document.getElementById('language').disabled = true;
-        submitButton.querySelector('span:first-child').textContent = 'Processing...';
-        submitSpinner.classList.remove('d-none');
+        submitButton.textContent = 'Processing...';
+        
+        // Disable form inputs if they exist
+        const urlInput = document.getElementById('youtubeUrl');
+        const modeSelect = document.getElementById('transcriptionMode');
+        const langSelect = document.getElementById('language');
+        
+        if (urlInput) urlInput.disabled = true;
+        if (modeSelect) modeSelect.disabled = true;
+        if (langSelect) langSelect.disabled = true;
         
         try {
             // Submit transcription request
