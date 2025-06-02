@@ -242,7 +242,7 @@ document.getElementById('batchForm').addEventListener('submit', async function(e
                             // Show download links
                             const downloadLinks = document.getElementById('downloadLinks');
                             downloadLinks.innerHTML = `
-                                <a href="/api/download/${jobId}?format=zip" class="btn btn-primary">
+                                <a href="/download/${jobId}?format=zip" class="btn btn-primary">
                                     <i data-feather="download" class="me-2"></i>Download All (ZIP)
                                 </a>
                             `;
