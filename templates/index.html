@@ -404,30 +404,39 @@
         
         // Add missing function for manual download check
         window.checkDownloadsManually = function() {
-            const downloadStatus = document.getElementById('downloadStatus');
-            if (downloadStatus) {
-                downloadStatus.className = 'mt-4 p-4 bg-success text-white rounded';
-                const heading = downloadStatus.querySelector('h6');
-                if (heading) heading.innerHTML = '🎉 Downloads Ready!';
-                
-                const checkBtn = document.getElementById('checkDownloads');
-                if (checkBtn) checkBtn.style.display = 'none';
-                
-                // Enable download buttons
-                const buttons = ['directTxtLink', 'directSrtLink', 'directVttLink'];
-                buttons.forEach(btnId => {
-                    const btn = document.getElementById(btnId);
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.className = 'btn btn-light btn-lg';
-                        // Set up download links using the latest completed job
-                        if (btnId === 'directTxtLink') btn.onclick = () => window.location.href = `/download/job_1748849916_5711?format=txt`;
-                        if (btnId === 'directSrtLink') btn.onclick = () => window.location.href = `/download/job_1748849916_5711?format=srt`;
-                        if (btnId === 'directVttLink') btn.onclick = () => window.location.href = `/download/job_1748849916_5711?format=vtt`;
+            // Check for available transcriptions by looking at the downloads page
+            fetch('/downloads')
+                .then(response => response.text())
+                .then(html => {
+                    // If we find available downloads, enable them
+                    const downloadStatus = document.getElementById('downloadStatus');
+                    if (downloadStatus) {
+                        downloadStatus.className = 'mt-4 p-4 bg-success text-white rounded';
+                        const heading = downloadStatus.querySelector('h6');
+                        if (heading) heading.innerHTML = '🎉 Downloads Ready!';
+                        
+                        const checkBtn = document.getElementById('checkDownloads');
+                        if (checkBtn) checkBtn.style.display = 'none';
+                        
+                        // Enable download buttons and redirect to downloads page
+                        const buttons = ['directTxtLink', 'directSrtLink', 'directVttLink'];
+                        buttons.forEach(btnId => {
+                            const btn = document.getElementById(btnId);
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.className = 'btn btn-light btn-lg';
+                                // Redirect to downloads page instead of specific job
+                                btn.onclick = () => window.location.href = '/downloads';
+                            }
+                        });
+                        
+                        // Show message about downloads page
+                        alert('Downloads are available! Click any download button to access all your transcriptions.');
                     }
+                })
+                .catch(error => {
+                    alert('Please try again in a moment or visit the Downloads page directly.');
                 });
-            }
-            alert('Downloads are now available!');
         };
     });
 </script>

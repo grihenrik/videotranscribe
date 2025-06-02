@@ -991,8 +991,39 @@ def websocket_status(job_id):
 
 @app.route('/downloads')
 def downloads_page():
-    """Simple downloads page with direct links"""
-    return render_template('simple_download.html')
+    """Dynamic downloads page showing available transcriptions"""
+    import os
+    import json
+    
+    available_jobs = []
+    tmp_dir = 'tmp'
+    
+    if os.path.exists(tmp_dir):
+        for folder in os.listdir(tmp_dir):
+            folder_path = os.path.join(tmp_dir, folder)
+            if os.path.isdir(folder_path) and folder.startswith('job_'):
+                metadata_path = os.path.join(folder_path, 'metadata.json')
+                if os.path.exists(metadata_path):
+                    try:
+                        with open(metadata_path, 'r') as f:
+                            metadata = json.load(f)
+                        available_jobs.append({
+                            'job_id': folder,
+                            'title': metadata.get('title', 'Unknown Video'),
+                            'completed_at': metadata.get('completed_at', 'Recently')
+                        })
+                    except:
+                        # If metadata can't be read, still show the job
+                        available_jobs.append({
+                            'job_id': folder,
+                            'title': 'Transcription Ready',
+                            'completed_at': 'Recently'
+                        })
+    
+    # Sort by job_id (which includes timestamp) - newest first
+    available_jobs.sort(key=lambda x: x['job_id'], reverse=True)
+    
+    return render_template('simple_download.html', jobs=available_jobs)
 
 @app.route('/download/<job_id>')
 def download(job_id):

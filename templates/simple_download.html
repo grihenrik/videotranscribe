@@ -17,18 +17,35 @@
                     <div class="card-body text-center py-5">
                         <p class="lead mb-4">Your YouTube videos have been successfully transcribed using OpenAI Whisper!</p>
                         
+                        {% if jobs %}
                         <div class="d-grid gap-3 mb-4">
-                            <h5>Recent Completed Jobs:</h5>
-                            <a href="/download/job_1748450838_8280?format=txt" class="btn btn-primary btn-lg">
-                                📄 Download job_1748450838_8280 (TXT)
-                            </a>
-                            <a href="/download/job_1748450898_8280?format=txt" class="btn btn-primary btn-lg">
-                                📄 Download job_1748450898_8280 (TXT)
-                            </a>
-                            <a href="/download/job_1748450914_8280?format=txt" class="btn btn-primary btn-lg">
-                                📄 Download job_1748450914_8280 (TXT)
-                            </a>
+                            <h5>Available Transcriptions:</h5>
+                            {% for job in jobs %}
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ job.title }}</h6>
+                                    <p class="card-text small text-muted">Completed: {{ job.completed_at }}</p>
+                                    <div class="btn-group" role="group">
+                                        <a href="/download/{{ job.job_id }}?format=txt" class="btn btn-primary">
+                                            📄 TXT
+                                        </a>
+                                        <a href="/download/{{ job.job_id }}?format=srt" class="btn btn-secondary">
+                                            🎬 SRT
+                                        </a>
+                                        <a href="/download/{{ job.job_id }}?format=vtt" class="btn btn-info">
+                                            🌐 VTT
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
                         </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <h5>No transcriptions available</h5>
+                            <p>Complete a transcription first, then your downloads will appear here.</p>
+                        </div>
+                        {% endif %}
                         
                         <div class="row">
                             <div class="col-md-4">
