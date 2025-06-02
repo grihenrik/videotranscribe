@@ -332,51 +332,8 @@
         }
         
         function connectWebSocket(jobId) {
-            // Check if WebSocket is supported
-            if ('WebSocket' in window) {
-                // Close any existing connection
-                if (websocket) {
-                    websocket.close();
-                }
-                
-                // Create new WebSocket connection
-                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const wsUrl = `${protocol}//${window.location.host}/api/ws/progress/${jobId}`;
-                
-                websocket = new WebSocket(wsUrl);
-                
-                websocket.onopen = function() {
-                    console.log('WebSocket connected');
-                };
-                
-                websocket.onmessage = function(event) {
-                    const data = JSON.parse(event.data);
-                    updateProgress(data);
-                    
-                    if (data.status === 'complete') {
-                        fetchTranscription(jobId);
-                        if (websocket) {
-                            websocket.close();
-                        }
-                    } else if (data.status === 'error') {
-                        showError(data.error || 'An error occurred during transcription.');
-                        if (websocket) {
-                            websocket.close();
-                        }
-                    }
-                };
-                
-                websocket.onerror = function(error) {
-                    console.error('WebSocket Error:', error);
-                    // Fall back to polling
-                };
-                
-                websocket.onclose = function() {
-                    console.log('WebSocket connection closed');
-                };
-            } else {
-                console.log('WebSocket not supported, falling back to polling');
-            }
+            // Skip WebSocket and use polling only to avoid security errors
+            console.log('Using polling instead of WebSocket for better compatibility');
         }
         
         function checkStatus(jobId) {
