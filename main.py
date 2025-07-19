@@ -1,48 +1,80 @@
 """
-Main entry point for the FastAPI application.
+Main entry point for the FastAPI application with WSGI compatibility fallback.
 """
 import os
 import sys
-import uvicorn
-import subprocess
 import threading
 import time
-from app import create_app
 
-# Create the FastAPI application instance
-app = create_app()
-
-def start_correct_server():
-    """Start the server with the correct ASGI configuration."""
-    def run_server():
-        try:
-            # Kill any existing processes
-            subprocess.run(["pkill", "-f", "gunicorn"], check=False, stderr=subprocess.DEVNULL)
-            time.sleep(1)
-            
-            # Start with the correct uvicorn worker configuration
-            cmd = [
-                sys.executable, "-m", "gunicorn",
-                "--bind", "0.0.0.0:5000",
-                "--worker-class", "uvicorn.workers.UvicornWorker",
-                "--workers", "1", 
-                "--reload",
-                "main:app"
-            ]
-            subprocess.run(cmd)
-        except Exception:
-            # Fallback to uvicorn directly
-            uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
+try:
+    # Try to create FastAPI app first
+    from app import create_app
+    import uvicorn
     
-    # Run the server in a separate thread
-    server_thread = threading.Thread(target=run_server, daemon=True)
-    server_thread.start()
+    # Create the FastAPI application instance
+    fastapi_app = create_app()
+    
+    # Check if we're being called by a WSGI server (like gunicorn with sync workers)
+    if 'gunicorn' in sys.modules or os.environ.get('SERVER_SOFTWARE', '').startswith('gunicorn'):
+        # We're likely being called by gunicorn with sync workers
+        # Create a simple Flask wrapper for WSGI compatibility
+        try:
+            from flask import Flask, request, jsonify
+            import requests
+            
+            flask_app = Flask(__name__)
+            
+            @flask_app.route('/')
+            def index():
+                return '''
+                <html>
+                <head><title>FastAPI Application</title></head>
+                <body>
+                    <h1>FastAPI YouTube Transcription Tool</h1>
+                    <p>This application requires ASGI server support.</p>
+                    <p>Please run with: <code>uvicorn main:fastapi_app --host 0.0.0.0 --port 5000</code></p>
+                    <p>Or with gunicorn: <code>gunicorn --worker-class uvicorn.workers.UvicornWorker main:fastapi_app</code></p>
+                </body>
+                </html>
+                '''
+            
+            # Export Flask app for WSGI compatibility
+            app = flask_app
+            
+        except ImportError:
+            # If Flask is not available, use the FastAPI app directly
+            app = fastapi_app
+    else:
+        # Normal FastAPI app for ASGI servers
+        app = fastapi_app
+        
+except ImportError as e:
+    # Fallback if FastAPI modules can't be imported
+    from flask import Flask
+    
+    fallback_app = Flask(__name__)
+    
+    @fallback_app.route('/')
+    def fallback():
+        return f'''
+        <html>
+        <head><title>Application Error</title></head>
+        <body>
+            <h1>Application Import Error</h1>
+            <p>Error: {str(e)}</p>
+            <p>Please check your FastAPI installation and dependencies.</p>
+        </body>
+        </html>
+        '''
+    
+    app = fallback_app
 
-# Auto-start the correct server when imported
-if os.environ.get('REPLIT_DEPLOYMENT') or os.environ.get('REPL_ID'):
-    # We're in Replit, start the correct server
-    start_correct_server()
+# Make FastAPI app available for uvicorn
+fastapi_app = app if 'fastapi_app' not in locals() else fastapi_app
 
 if __name__ == "__main__":
-    # For direct execution, use uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
+    # For direct execution, use uvicorn with FastAPI
+    try:
+        uvicorn.run(fastapi_app, host="0.0.0.0", port=5000, reload=True)
+    except:
+        uvicorn.run("main:fastapi_app", host="0.0.0.0", port=5000, reload=True)
