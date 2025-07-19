@@ -24,4 +24,6 @@ dependencies = [
     "flask-login>=0.6.3",
     "oauthlib>=3.2.2",
     "sqlalchemy>=2.0.41",
+    "asgiref>=3.9.1",
+    "requests>=2.32.3",
 ]
