@@ -67,16 +67,24 @@ The application is structured as a FastAPI backend with a static HTML/CSS/JavaSc
 ## Deployment Strategy
 
 The application is configured to run on Replit with:
-- Gunicorn as the production WSGI server
+- Gunicorn with uvicorn.workers.UvicornWorker for ASGI compatibility
+- FastAPI framework requiring ASGI server instead of WSGI
 - Automatic scaling via Replit's deployment features
 - Static file serving directly through FastAPI
 
+### Fixed Deployment Issues (January 2025)
+- ✓ Resolved FastAPI/Flask confusion - app is purely FastAPI
+- ✓ Fixed gunicorn worker configuration to use uvicorn.workers.UvicornWorker
+- ✓ Created proper app entry points that work with deployment tools
+- ✓ Ensured main:app exports FastAPI instance correctly
+
 ### Local Development
-- Run with Uvicorn using `python main.py` for hot reloading
-- Access the application at `http://localhost:8000`
+- Run with `python app_main_fixed.py` for production-like setup
+- Run with `python main.py` for basic uvicorn development server
+- Access the application at `http://localhost:5000`
 
 ### Production
-- Run with Gunicorn using `gunicorn --bind 0.0.0.0:5000 main:app`
+- Correct command: `gunicorn --bind 0.0.0.0:5000 --worker-class uvicorn.workers.UvicornWorker --workers 1 --reload main:app`
 - Environment variables can be used to configure:
   - Whisper model size (tiny, base, small, medium, large)
   - OpenAI API integration

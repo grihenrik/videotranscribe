@@ -7,7 +7,6 @@ from app.api.download import router as download_router
 from app.api.progress_ws import router as websocket_router
 from app.core.logging import setup_logging
 
-
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     app = FastAPI(
@@ -39,3 +38,6 @@ def create_app() -> FastAPI:
     app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
     return app
+
+# Create the FastAPI application instance
+app = create_app()
