@@ -80,18 +80,36 @@ The application is configured to run on Replit with:
 - ✓ Verified application works with uvicorn ASGI server
 - ✓ Created multiple working startup scripts for different deployment scenarios
 
+### ASGI Issue Resolution (September 2025)
+- ✅ **ROOT CAUSE**: Workflow uses gunicorn with sync workers (WSGI), but FastAPI requires ASGI
+- ✅ **VERIFIED SOLUTION**: Application works perfectly with `uvicorn main:app --host 0.0.0.0 --port 5000`
+- ✅ **PRODUCTION READY**: Created deployment scripts that use proper ASGI configuration
+- ✅ **TESTING CONFIRMED**: FastAPI serves content correctly with ASGI servers
+
 ### Local Development
 - Run with `python app_main_fixed.py` for production-like setup
 - Run with `python main.py` for basic uvicorn development server
 - Access the application at `http://localhost:5000`
 
 ### Production
-- Correct command: `gunicorn --bind 0.0.0.0:5000 --worker-class uvicorn.workers.UvicornWorker --workers 1 --reload main:app`
+- **RECOMMENDED**: `uvicorn main:app --host 0.0.0.0 --port 5000 --reload` (Pure ASGI)
+- **ALTERNATIVE**: `gunicorn --bind 0.0.0.0:5000 --worker-class uvicorn.workers.UvicornWorker --workers 1 --reload main:app` (Gunicorn with ASGI workers)
+- **DEPLOYMENT SCRIPTS**: Use `./asgi_deployment.py` for automatic ASGI configuration
 - Environment variables can be used to configure:
   - Whisper model size (tiny, base, small, medium, large)
   - OpenAI API integration
   - GPU acceleration (if available)
   - Caching strategy (memory or Redis)
+
+### Workflow Fix Required
+The current Replit workflow needs to be updated from:
+```
+gunicorn --bind 0.0.0.0:5000 --reuse-port --reload main:app
+```
+To:
+```
+uvicorn main:app --host 0.0.0.0 --port 5000 --reload
+```
 
 ## Database
 
