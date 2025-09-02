@@ -119,12 +119,40 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script>
-        // Simple test to see if JavaScript is working
-        console.log('JavaScript is working!');
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, body content:', document.body.innerHTML.length, 'characters');
-            console.log('Form found:', !!document.getElementById('transcriptionForm'));
-        });
+        // Immediate debug test
+        console.log('Inline JavaScript working!');
+        console.log('Form exists immediately:', !!document.getElementById('transcriptionForm'));
+        
+        // Test direct form setup without waiting
+        setTimeout(function() {
+            console.log('After 100ms - Form exists:', !!document.getElementById('transcriptionForm'));
+            console.log('After 100ms - Button exists:', !!document.getElementById('transcribeBtn'));
+            
+            const form = document.getElementById('transcriptionForm');
+            const button = document.getElementById('transcribeBtn');
+            
+            if (form && button) {
+                console.log('DIRECT SETUP: Form found, setting up handlers...');
+                
+                form.onsubmit = function(e) {
+                    e.preventDefault();
+                    alert('Form submission intercepted! Processing would start here.');
+                    console.log('Form prevented from submitting');
+                    return false;
+                };
+                
+                button.onclick = function(e) {
+                    e.preventDefault();
+                    alert('Button click intercepted! Processing would start here.');
+                    console.log('Button click prevented');
+                    return false;
+                };
+                
+                console.log('DIRECT SETUP: Handlers attached successfully');
+            } else {
+                console.log('DIRECT SETUP: Still no form found');
+            }
+        }, 100);
     </script>
     <script src="/js/main.js"></script>
 </body>
