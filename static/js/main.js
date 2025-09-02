@@ -37,6 +37,50 @@ document.addEventListener('DOMContentLoaded', function() {
         return false;
     });
     
+    // Batch form handlers
+    const batchForm = document.getElementById('batchForm');
+    const batchButton = document.getElementById('batchBtn');
+    
+    if (batchForm && batchButton) {
+        batchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Batch form submission intercepted');
+            handleBatchSubmission();
+            return false;
+        });
+        
+        batchButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Batch button click intercepted');
+            handleBatchSubmission();
+            return false;
+        });
+    }
+    
+    // Playlist form handlers
+    const playlistForm = document.getElementById('playlistForm');
+    const playlistButton = document.getElementById('playlistBtn');
+    
+    if (playlistForm && playlistButton) {
+        playlistForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Playlist form submission intercepted');
+            handlePlaylistSubmission();
+            return false;
+        });
+        
+        playlistButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Playlist button click intercepted');
+            handlePlaylistSubmission();
+            return false;
+        });
+    }
+    
     function handleSubmission() {
         console.log('Processing transcription request...');
         
@@ -334,6 +378,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000); // Check every 3 seconds
     }
     
+    function handleBatchSubmission() {
+        alert('Batch processing is not yet implemented in the API. This feature is coming soon!');
+        console.log('Batch processing placeholder');
+    }
+    
+    function handlePlaylistSubmission() {
+        alert('Playlist processing is not yet implemented in the API. This feature is coming soon!');
+        console.log('Playlist processing placeholder');
+    }
+    
     function enableDownloadButtons() {
         const txtBtn = document.getElementById('download-txt');
         const srtBtn = document.getElementById('download-srt');
@@ -349,4 +403,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-console.log('JavaScript file loaded completely (v2025090202)');
+console.log('JavaScript file loaded completely (v2025090203)');
