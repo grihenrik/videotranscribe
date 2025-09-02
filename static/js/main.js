@@ -69,7 +69,10 @@ document.addEventListener('DOMContentLoaded', function() {
         modeSelect.disabled = true;
         langSelect.disabled = true;
         
-        // Submit to API
+        // Submit to API with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        
         fetch('/api/transcribe', {
             method: 'POST',
             headers: {
@@ -79,9 +82,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 url: youtubeUrl,
                 mode: transcriptionMode,
                 lang: language
-            })
+            }),
+            signal: controller.signal
         })
         .then(response => {
+            clearTimeout(timeoutId);
             console.log('Response status:', response.status);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -98,8 +103,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
+            clearTimeout(timeoutId);
             console.error('Error:', error);
-            alert('Failed to start transcription: ' + error.message);
+            
+            let errorMessage = 'Failed to start transcription: ';
+            if (error.name === 'AbortError') {
+                errorMessage += 'Request timed out. The server may be busy or the video may not be accessible.';
+            } else if (error.message.includes('403')) {
+                errorMessage += 'YouTube blocked access to this video. Try a different video or try again later.';
+            } else if (error.message.includes('404')) {
+                errorMessage += 'Video not found. Please check the URL and try again.';
+            } else {
+                errorMessage += error.message;
+            }
+            
+            alert(errorMessage);
         })
         .finally(() => {
             // Re-enable form
@@ -209,25 +227,60 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Checking transcription status for job:', jobId);
         
         const checkInterval = setInterval(() => {
-            fetch(`/api/download/${jobId}?format=txt`)
-                .then(response => {
-                    if (response.ok) {
-                        // Transcription is ready, enable buttons
+            fetch(`/api/job/${jobId}/status`)
+                .then(response => response.json())
+                .then(status => {
+                    console.log('Job status:', status);
+                    
+                    const statusBadge = document.getElementById('job-status');
+                    const progressBar = document.getElementById('progress-bar');
+                    
+                    if (status.status === 'complete') {
+                        // Transcription completed successfully
                         enableDownloadButtons();
                         clearInterval(checkInterval);
                         
-                        // Update status
-                        const statusBadge = document.getElementById('job-status');
                         if (statusBadge) {
                             statusBadge.textContent = 'Completed';
                             statusBadge.className = 'badge bg-success';
                         }
+                        if (progressBar) {
+                            progressBar.style.width = '100%';
+                            progressBar.textContent = '100%';
+                        }
                         
                         console.log('Transcription completed, download buttons enabled');
+                        
+                    } else if (status.status === 'error') {
+                        // Transcription failed
+                        clearInterval(checkInterval);
+                        
+                        if (statusBadge) {
+                            statusBadge.textContent = 'Failed';
+                            statusBadge.className = 'badge bg-danger';
+                        }
+                        
+                        const errorMsg = status.error || 'Unknown error';
+                        alert(`Transcription failed: ${errorMsg}\n\nThis may be due to YouTube access restrictions. Try a different video.`);
+                        
+                        console.log('Transcription failed:', errorMsg);
+                        
+                    } else {
+                        // Still processing - update progress
+                        if (statusBadge) {
+                            statusBadge.textContent = status.status || 'Processing';
+                            statusBadge.className = 'badge bg-primary';
+                        }
+                        if (progressBar && status.percent) {
+                            progressBar.style.width = status.percent + '%';
+                            progressBar.textContent = status.percent + '%';
+                        }
+                        
+                        console.log(`Still processing: ${status.status} (${status.percent || 0}%)`);
                     }
                 })
                 .catch(error => {
-                    console.log('Still processing...', error.message);
+                    console.log('Error checking status:', error.message);
                 });
         }, 3000); // Check every 3 seconds
         
@@ -235,6 +288,12 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             clearInterval(checkInterval);
             console.log('Stopped checking transcription status (timeout)');
+            
+            const statusBadge = document.getElementById('job-status');
+            if (statusBadge && !statusBadge.textContent.includes('Completed')) {
+                statusBadge.textContent = 'Timeout';
+                statusBadge.className = 'badge bg-warning';
+            }
         }, 300000);
     }
     
