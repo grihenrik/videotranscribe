@@ -1,325 +1,181 @@
-// Initialize Feather icons
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM Content Loaded!');
-    console.log('Document ready state:', document.readyState);
-    console.log('All forms on page:', document.querySelectorAll('form'));
-    console.log('All buttons on page:', document.querySelectorAll('button'));
+// YouTube Transcription Tool - Main JavaScript
+
+// Wait for the page to fully load
+window.addEventListener('load', function() {
+    console.log('Page fully loaded, initializing...');
     
-    if (typeof feather !== 'undefined') {
-        feather.replace();
+    // Find form elements
+    const form = document.getElementById('transcriptionForm');
+    const button = document.getElementById('transcribeBtn');
+    
+    console.log('Form found:', !!form);
+    console.log('Button found:', !!button);
+    
+    if (form && button) {
+        console.log('SUCCESS: Setting up transcription form');
+        setupTranscriptionForm(form, button);
+    } else {
+        console.log('FAILED: Form elements not found');
+        // Try alternative approach
+        const forms = document.getElementsByTagName('form');
+        const buttons = document.getElementsByTagName('button');
+        
+        if (forms.length > 0 && buttons.length > 0) {
+            console.log('Using alternative method to find elements');
+            setupTranscriptionForm(forms[0], buttons[0]);
+        } else {
+            console.log('No form elements found at all');
+        }
     }
-    initTranscriptionForm();
+    
+    // Initialize Feather icons if available
+    if (typeof feather !== 'undefined') {
+        try {
+            feather.replace();
+        } catch (e) {
+            console.log('Feather icons initialization failed:', e);
+        }
+    }
 });
 
-function initTranscriptionForm() {
-    console.log('Initializing transcription form...');
-    const form = document.getElementById('transcriptionForm');
-    const submitButton = document.getElementById('transcribeBtn');
-    const resultSection = document.getElementById('results-container');
+function setupTranscriptionForm(form, button) {
+    console.log('Setting up form functionality...');
     
-    console.log('Form element:', form);
-    console.log('Submit button:', submitButton);
-    
-    // Check if elements exist to prevent errors
-    if (!form || !submitButton) {
-        console.log('Form elements not found, skipping initialization');
-        console.log('Available form elements:', document.querySelectorAll('form'));
-        console.log('Available buttons:', document.querySelectorAll('button'));
-        return;
-    }
-    
-    console.log('Form initialization successful!');
-    
-    // Download links (these exist in the HTML)
-    const downloadTxt = document.getElementById('downloadTxt');
-    const downloadSrt = document.getElementById('downloadSrt');
-    const downloadVtt = document.getElementById('downloadVtt');
-    
-    // Add click handler to button as backup
-    submitButton.addEventListener('click', function(e) {
+    // Prevent default form submission
+    form.addEventListener('submit', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        console.log('Button clicked directly');
-        if (form.checkValidity()) {
-            submitTranscription();
-        }
+        console.log('Form submitted via event listener');
+        handleTranscription();
+        return false;
     });
     
-    // Handle form submission
-    form.addEventListener('submit', async (e) => {
+    // Handle button clicks
+    button.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        console.log('Form submitted via JavaScript');
-        submitTranscription();
+        console.log('Button clicked');
+        handleTranscription();
+        return false;
     });
     
-    async function submitTranscription() {
+    // Add onsubmit as backup
+    form.onsubmit = function() {
+        console.log('Form submitted via onsubmit');
+        handleTranscription();
+        return false;
+    };
+    
+    function handleTranscription() {
+        console.log('Processing transcription request...');
+        
         // Get form values
-        const youtubeUrl = document.getElementById('youtubeUrl').value;
-        const transcriptionMode = document.getElementById('transcriptionMode').value;
-        const language = document.getElementById('language').value;
-        
-        console.log('Submitting:', { youtubeUrl, transcriptionMode, language });
-        
-        // Disable form during processing
-        submitButton.disabled = true;
-        submitButton.textContent = 'Processing...';
-        
-        // Disable form inputs if they exist
         const urlInput = document.getElementById('youtubeUrl');
         const modeSelect = document.getElementById('transcriptionMode');
         const langSelect = document.getElementById('language');
         
+        const youtubeUrl = urlInput ? urlInput.value.trim() : '';
+        const transcriptionMode = modeSelect ? modeSelect.value : 'auto';
+        const language = langSelect ? langSelect.value : 'en';
+        
+        console.log('Form data:', { youtubeUrl, transcriptionMode, language });
+        
+        // Validate input
+        if (!youtubeUrl) {
+            alert('Please enter a YouTube URL');
+            return;
+        }
+        
+        if (!youtubeUrl.includes('youtube.com') && !youtubeUrl.includes('youtu.be')) {
+            alert('Please enter a valid YouTube URL');
+            return;
+        }
+        
+        // Disable form during processing
+        button.disabled = true;
+        button.textContent = 'Processing...';
         if (urlInput) urlInput.disabled = true;
         if (modeSelect) modeSelect.disabled = true;
         if (langSelect) langSelect.disabled = true;
         
-        try {
-            // Submit transcription request
-            const response = await fetch('/api/transcribe', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    url: youtubeUrl,
-                    mode: transcriptionMode,
-                    lang: language
-                })
-            });
+        // Submit to API
+        fetch('/api/transcribe', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                url: youtubeUrl,
+                mode: transcriptionMode,
+                lang: language
+            })
+        })
+        .then(response => {
+            console.log('API response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('API response data:', data);
             
-            if (!response.ok) {
-                throw new Error('Failed to start transcription');
-            }
-            
-            const data = await response.json();
-            const jobId = data.job_id;
-            
-            // Keep download buttons disabled initially - they'll be enabled when transcription completes
-            
-            // Store job ID globally and track start time
-            window.currentJobId = jobId;
-            window.jobStartTime = Date.now();
-            
-            // Show results container
-            resultSection.classList.remove('d-none');
-            
-            // Display video title if available, otherwise ID
-            const videoIdElement = document.getElementById('video-id');
-            if (data.video_title) {
-                videoIdElement.textContent = data.video_title;
-            } else {
-                videoIdElement.textContent = data.video_id;
-            }
-            
-            // Update download links
-            if (downloadTxt) downloadTxt.href = data.download_links.txt;
-            if (downloadSrt) downloadSrt.href = data.download_links.srt;
-            if (downloadVtt) downloadVtt.href = data.download_links.vtt;
-            
-            // Start polling for status updates to show progress
-            pollJobStatus(data.job_id);
-            
-            // Auto-show downloads after 20 seconds and every 10 seconds after
-            setTimeout(() => {
-                const progressSection = document.getElementById('processing-section');
-                const downloadSection = document.getElementById('download-section');
+            if (data.job_id) {
+                // Show success message
+                alert('Transcription started successfully! Job ID: ' + data.job_id);
                 
-                // Hide progress and show downloads
-                progressSection.classList.add('d-none');
-                downloadSection.classList.remove('d-none');
-                
-                console.log('Auto-showing downloads for completed transcription');
-            }, 20000); // 20 seconds
-            
-            // Also try every 10 seconds after that
-            const downloadChecker = setInterval(() => {
-                const progressSection = document.getElementById('processing-section');
-                const downloadSection = document.getElementById('download-section');
-                
-                if (downloadSection.classList.contains('d-none')) {
-                    progressSection.classList.add('d-none');
-                    downloadSection.classList.remove('d-none');
-                    clearInterval(downloadChecker);
+                // Show results section
+                const resultsContainer = document.getElementById('results-container');
+                if (resultsContainer) {
+                    resultsContainer.classList.remove('d-none');
                 }
-            }, 10000);
-            
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Failed to start transcription: ' + error.message);
-            
+                
+                // Update video information
+                const videoIdElement = document.getElementById('video-id');
+                if (videoIdElement) {
+                    videoIdElement.textContent = data.video_id || 'Processing...';
+                }
+                
+                // Set up download links
+                updateDownloadLinks(data.download_links);
+                
+                // Show download section after a few seconds
+                setTimeout(() => {
+                    showDownloadSection();
+                }, 3000);
+                
+            } else {
+                alert('Error starting transcription: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Network error:', error);
+            alert('Failed to connect to the server. Please try again.');
+        })
+        .finally(() => {
             // Re-enable form
-            submitButton.disabled = false;
-            submitButton.textContent = 'Transcribe Video';
+            button.disabled = false;
+            button.textContent = 'Transcribe Video';
             if (urlInput) urlInput.disabled = false;
             if (modeSelect) modeSelect.disabled = false;
             if (langSelect) langSelect.disabled = false;
-        }
-    }
-    
-    // Poll for job status updates
-    async function pollJobStatus(jobId) {
-        let interval = setInterval(async () => {
-            try {
-                const response = await fetch(`/api/job/${jobId}/status`);
-                
-                if (!response.ok) {
-                    throw new Error('Failed to get job status');
-                }
-                
-                const data = await response.json();
-                console.log('Status response:', data); // Debug log
-                
-                // Update progress bar
-                const progress = data.progress || data.percent || 100;
-                progressBar.style.width = `${progress}%`;
-                progressBar.textContent = `${progress}%`;
-                progressBar.setAttribute('aria-valuenow', progress);
-                
-                // Always check if we should show downloads (transcription typically completes in 20-30 seconds)
-                const timeSinceStart = Date.now() - window.jobStartTime;
-                const shouldShowDownloads = data.status === 'completed' || data.status === 'complete' || progress >= 100 || timeSinceStart > 25000;
-                
-                if (shouldShowDownloads) {
-                    console.log('Transcription completed, enabling downloads'); // Debug log
-                    jobStatusBadge.textContent = 'Complete';
-                    jobStatusBadge.className = 'badge bg-success';
-                    
-                    // Update download status section to show completion
-                    const downloadStatus = document.getElementById('downloadStatus');
-                    downloadStatus.className = 'mt-4 p-4 bg-success text-white rounded';
-                    downloadStatus.querySelector('h6').innerHTML = '🎉 Downloads Ready!';
-                    downloadStatus.querySelector('p').textContent = 'Your transcription is complete! Click any button to download.';
-                    
-                    // Enable download buttons and set correct links
-                    const jobId = window.currentJobId;
-                    const txtBtn = document.getElementById('directTxtLink');
-                    const srtBtn = document.getElementById('directSrtLink');
-                    const vttBtn = document.getElementById('directVttLink');
-                    
-                    // Convert buttons to working download links
-                    txtBtn.disabled = false;
-                    txtBtn.className = 'btn btn-light btn-lg';
-                    txtBtn.onclick = () => window.open(`/download/${jobId}?format=txt`, '_blank');
-                    
-                    srtBtn.disabled = false;
-                    srtBtn.className = 'btn btn-light btn-lg';
-                    srtBtn.onclick = () => window.open(`/download/${jobId}?format=srt`, '_blank');
-                    
-                    vttBtn.disabled = false;
-                    vttBtn.className = 'btn btn-light btn-lg';
-                    vttBtn.onclick = () => window.open(`/download/${jobId}?format=vtt`, '_blank');
-                    
-                    // Hide progress section and show download section
-                    progressSection.classList.add('d-none');
-                    downloadSection.classList.remove('d-none');
-                    
-                    // Update main download links too
-                    document.getElementById('downloadTxt').href = `/download/${jobId}?format=txt`;
-                    document.getElementById('downloadSrt').href = `/download/${jobId}?format=srt`;
-                    document.getElementById('downloadVtt').href = `/download/${jobId}?format=vtt`;
-                    
-                    // Reset form
-                    submitButton.disabled = false;
-                    document.getElementById('youtube-url').disabled = false;
-                    document.getElementById('transcription-mode').disabled = false;
-                    document.getElementById('language').disabled = false;
-                    submitButton.querySelector('span:first-child').textContent = 'Transcribe Another Video';
-                    submitSpinner.classList.add('d-none');
-                    
-                    // Stop polling
-                    clearInterval(interval);
-                    return; // Exit polling function
-                } else if (data.status === 'error') {
-                    jobStatusBadge.textContent = 'Error';
-                    jobStatusBadge.className = 'badge bg-danger';
-                    
-                    // Reset form
-                    submitButton.disabled = false;
-                    document.getElementById('youtube-url').disabled = false;
-                    document.getElementById('transcription-mode').disabled = false;
-                    document.getElementById('language').disabled = false;
-                    submitButton.querySelector('span:first-child').textContent = 'Try Again';
-                    submitSpinner.classList.add('d-none');
-                    
-                    // Stop polling
-                    clearInterval(interval);
-                }
-                
-            } catch (error) {
-                console.error('Error checking status:', error);
-                
-                // Don't stop polling immediately - try a few more times
-                // This prevents the repeated error messages users see
-                
-                // Stop polling after several failures
-                clearInterval(interval);
-                
-                // Since status checking failed, assume job is complete and show download links
-                jobStatusBadge.textContent = 'Complete';
-                jobStatusBadge.className = 'badge bg-success';
-                downloadSection.classList.remove('d-none');
-                
-                // Reset form
-                submitButton.disabled = false;
-                document.getElementById('youtube-url').disabled = false;
-                document.getElementById('transcription-mode').disabled = false;
-                document.getElementById('language').disabled = false;
-                submitButton.querySelector('span:first-child').textContent = 'Transcribe Another Video';
-                submitSpinner.classList.add('d-none');
-            }
-        }, 2000); // Poll every 2 seconds
-        
-        // Show manual download button after 15 seconds
-        setTimeout(() => {
-            const showBtn = document.getElementById('showDownloadsBtn');
-            if (showBtn) {
-                showBtn.style.display = 'inline-block';
-            }
-        }, 15000);
+        });
     }
 }
 
-// Function to manually enable downloads
-function enableDownloads() {
-    const currentJobId = window.currentJobId;
-    if (currentJobId) {
-        console.log('Manually enabling downloads for job:', currentJobId);
-        
-        // Update download status section to show completion
-        const downloadStatus = document.getElementById('downloadStatus');
-        downloadStatus.className = 'mt-4 p-4 bg-success text-white rounded';
-        downloadStatus.querySelector('h6').innerHTML = '🎉 Downloads Ready!';
-        downloadStatus.querySelector('p').textContent = 'Your transcription is complete! Click any button to download.';
-        
-        // Hide the check button
-        document.getElementById('checkDownloads').style.display = 'none';
-        
-        // Enable download buttons and set correct links
-        const txtBtn = document.getElementById('directTxtLink');
-        const srtBtn = document.getElementById('directSrtLink');
-        const vttBtn = document.getElementById('directVttLink');
-        
-        // Convert buttons to working download links
-        txtBtn.disabled = false;
-        txtBtn.className = 'btn btn-light btn-lg';
-        txtBtn.onclick = () => window.open(`/download/${currentJobId}?format=txt`, '_blank');
-        
-        srtBtn.disabled = false;
-        srtBtn.className = 'btn btn-light btn-lg';
-        srtBtn.onclick = () => window.open(`/download/${currentJobId}?format=srt`, '_blank');
-        
-        vttBtn.disabled = false;
-        vttBtn.className = 'btn btn-light btn-lg';
-        vttBtn.onclick = () => window.open(`/download/${currentJobId}?format=vtt`, '_blank');
-        
-        // Also show the main download section
-        document.getElementById('processingSection').classList.add('d-none');
-        document.getElementById('downloadSection').classList.remove('d-none');
-        
-        // Set main download links
-        document.getElementById('downloadTxt').href = `/download/${currentJobId}?format=txt`;
-        document.getElementById('downloadSrt').href = `/download/${currentJobId}?format=srt`;
-        document.getElementById('downloadVtt').href = `/download/${currentJobId}?format=vtt`;
+function updateDownloadLinks(downloadLinks) {
+    if (!downloadLinks) return;
+    
+    const txtLink = document.getElementById('download-txt');
+    const srtLink = document.getElementById('download-srt');
+    const vttLink = document.getElementById('download-vtt');
+    
+    if (txtLink && downloadLinks.txt) txtLink.href = downloadLinks.txt;
+    if (srtLink && downloadLinks.srt) srtLink.href = downloadLinks.srt;
+    if (vttLink && downloadLinks.vtt) vttLink.href = downloadLinks.vtt;
+}
+
+function showDownloadSection() {
+    const downloadSection = document.getElementById('download-section');
+    if (downloadSection) {
+        downloadSection.classList.remove('d-none');
+        console.log('Download section shown');
     }
 }
