@@ -55,9 +55,24 @@ body {
 /* Download section styling */
 #download-section .btn {
     text-decoration: none;
+    transition: all 0.2s ease;
 }
 
-#download-section .btn:hover {
+#download-section .btn:hover:not(.disabled) {
     transform: translateY(-1px);
-    transition: transform 0.2s ease;
+}
+
+#download-section .btn.disabled {
+    opacity: 0.5 !important;
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+/* Status badges */
+.badge.bg-success {
+    background-color: #198754 !important;
+}
+
+.badge.bg-primary {
+    background-color: #0d6efd !important;
 }
