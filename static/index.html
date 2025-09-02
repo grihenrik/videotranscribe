@@ -12,14 +12,6 @@
         <header class="text-center mb-5">
             <h1 class="display-4 mb-3">YouTube Transcription Tool</h1>
             <p class="lead">Extract text from YouTube videos using captions or speech recognition</p>
-            <div class="mt-3 nav-buttons">
-                <a href="/batch.html" class="btn btn-outline-primary">
-                    <i data-feather="layers"></i> Batch Processing
-                </a>
-                <a href="/playlist.html" class="btn btn-outline-primary">
-                    <i data-feather="list"></i> Playlist Processing
-                </a>
-            </div>
         </header>
 
         <div class="row justify-content-center">
@@ -29,7 +21,7 @@
                         <h2 class="h5 mb-0">Submit a Video for Transcription</h2>
                     </div>
                     <div class="card-body">
-                        <form id="transcriptionForm" onsubmit="return false;">
+                        <form id="transcriptionForm">
                             <div class="mb-3">
                                 <label for="youtubeUrl" class="form-label">YouTube URL</label>
                                 <input type="url" class="form-control" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." required>
@@ -57,17 +49,12 @@
                                         <option value="ja">Japanese</option>
                                         <option value="zh">Chinese</option>
                                         <option value="ko">Korean</option>
-                                        <option value="fi">Finnish</option>
-                                        <option value="sv">Swedish</option>
-                                        <option value="no">Norwegian</option>
-                                        <option value="da">Danish</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary btn-lg" id="transcribeBtn">
-                                    <span>Transcribe Video</span>
-                                    <span class="spinner-border spinner-border-sm d-none" id="submit-spinner" role="status" aria-hidden="true"></span>
+                                    Transcribe Video
                                 </button>
                             </div>
                         </form>
@@ -92,13 +79,13 @@
                                 <h3 class="h6 mb-3">Download Transcription</h3>
                                 <div class="d-flex gap-2">
                                     <a id="download-txt" href="#" class="btn btn-outline-primary">
-                                        <i data-feather="file-text"></i> Text (.txt)
+                                        📄 Text (.txt)
                                     </a>
                                     <a id="download-srt" href="#" class="btn btn-outline-primary">
-                                        <i data-feather="file"></i> Subtitles (.srt)
+                                        📋 Subtitles (.srt)
                                     </a>
                                     <a id="download-vtt" href="#" class="btn btn-outline-primary">
-                                        <i data-feather="film"></i> WebVTT (.vtt)
+                                        🎬 WebVTT (.vtt)
                                     </a>
                                 </div>
                             </div>
@@ -109,50 +96,7 @@
         </div>
     </div>
 
-    <footer class="container py-3 my-4 border-top">
-        <p class="text-center text-muted">
-            &copy; 2025 YouTube Transcription Tool | Created on Replit
-        </p>
-    </footer>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-    <script>
-        // Immediate debug test
-        console.log('Inline JavaScript working!');
-        console.log('Form exists immediately:', !!document.getElementById('transcriptionForm'));
-        
-        // Test direct form setup without waiting
-        setTimeout(function() {
-            console.log('After 100ms - Form exists:', !!document.getElementById('transcriptionForm'));
-            console.log('After 100ms - Button exists:', !!document.getElementById('transcribeBtn'));
-            
-            const form = document.getElementById('transcriptionForm');
-            const button = document.getElementById('transcribeBtn');
-            
-            if (form && button) {
-                console.log('DIRECT SETUP: Form found, setting up handlers...');
-                
-                form.onsubmit = function(e) {
-                    e.preventDefault();
-                    alert('Form submission intercepted! Processing would start here.');
-                    console.log('Form prevented from submitting');
-                    return false;
-                };
-                
-                button.onclick = function(e) {
-                    e.preventDefault();
-                    alert('Button click intercepted! Processing would start here.');
-                    console.log('Button click prevented');
-                    return false;
-                };
-                
-                console.log('DIRECT SETUP: Handlers attached successfully');
-            } else {
-                console.log('DIRECT SETUP: Still no form found');
-            }
-        }, 100);
-    </script>
     <script src="/js/main.js"></script>
 </body>
 </html>
