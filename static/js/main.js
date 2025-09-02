@@ -35,14 +35,31 @@ function initTranscriptionForm() {
     const downloadSrt = document.getElementById('downloadSrt');
     const downloadVtt = document.getElementById('downloadVtt');
     
+    // Add click handler to button as backup
+    submitButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Button clicked directly');
+        if (form.checkValidity()) {
+            submitTranscription();
+        }
+    });
+    
     // Handle form submission
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+        e.stopPropagation();
+        console.log('Form submitted via JavaScript');
+        submitTranscription();
+    });
+    
+    async function submitTranscription() {
         // Get form values
         const youtubeUrl = document.getElementById('youtubeUrl').value;
         const transcriptionMode = document.getElementById('transcriptionMode').value;
         const language = document.getElementById('language').value;
+        
+        console.log('Submitting:', { youtubeUrl, transcriptionMode, language });
         
         // Disable form during processing
         submitButton.disabled = true;
@@ -133,10 +150,12 @@ function initTranscriptionForm() {
             
             // Re-enable form
             submitButton.disabled = false;
-            submitButton.querySelector('span:first-child').textContent = 'Transcribe Video';
-            submitSpinner.classList.add('d-none');
+            submitButton.textContent = 'Transcribe Video';
+            if (urlInput) urlInput.disabled = false;
+            if (modeSelect) modeSelect.disabled = false;
+            if (langSelect) langSelect.disabled = false;
         }
-    });
+    }
     
     // Poll for job status updates
     async function pollJobStatus(jobId) {
