@@ -124,44 +124,92 @@ async def process_transcription(
         cache_key: Key for caching the result
     """
     try:
-        # Update status to downloading
-        job_statuses[job_id]["status"] = "downloading"
-        job_statuses[job_id]["percent"] = 10
+        transcription = None
+        
+        # Try captions first if mode is 'auto' or 'captions'
+        if request.mode in ['auto', 'captions']:
+            logger.info(f"Attempting to extract captions for video {video_id}")
+            job_statuses[job_id]["status"] = "extracting_captions"
+            job_statuses[job_id]["percent"] = 20
+            await broadcast_status_update(job_id, job_statuses[job_id])
+            
+            try:
+                # Try to get captions from YouTube
+                from app.services.youtube_service import YouTubeService
+                youtube_service = YouTubeService()
+                
+                captions = await youtube_service.download_captions(video_id, request.lang)
+                if captions:
+                    logger.info(f"Successfully extracted captions for video {video_id}")
+                    transcription = captions
+                    
+                    # Update status to processing
+                    job_statuses[job_id]["status"] = "processing_captions"
+                    job_statuses[job_id]["percent"] = 70
+                    await broadcast_status_update(job_id, job_statuses[job_id])
+                else:
+                    logger.info(f"No captions found for video {video_id}")
+                    
+            except Exception as caption_error:
+                logger.warning(f"Caption extraction failed: {caption_error}")
+                
+            # If captions mode and no captions found, fail
+            if request.mode == 'captions' and not transcription:
+                raise Exception("No captions available for this video")
+        
+        # If no transcription yet and mode allows Whisper, try audio download
+        if not transcription and request.mode in ['auto', 'whisper']:
+            logger.info(f"Attempting Whisper transcription for video {video_id}")
+            
+            # Update status to downloading
+            job_statuses[job_id]["status"] = "downloading_audio"
+            job_statuses[job_id]["percent"] = 30
+            await broadcast_status_update(job_id, job_statuses[job_id])
+            
+            # Create a temporary directory for processing
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Download audio
+                audio_path = whisper_service.download_audio_from_youtube(request.url, temp_dir)
+                if not audio_path:
+                    if request.mode == 'whisper':
+                        raise Exception("Failed to download audio for Whisper transcription")
+                    else:
+                        raise Exception("Failed to download audio and no captions available")
+                
+                # Update status to transcribing
+                job_statuses[job_id]["status"] = "transcribing_audio"
+                job_statuses[job_id]["percent"] = 70
+                await broadcast_status_update(job_id, job_statuses[job_id])
+                
+                # Transcribe audio
+                transcription = whisper_service.transcribe_audio_file(audio_path, request.lang)
+                if not transcription:
+                    raise Exception("Failed to transcribe audio with Whisper")
+        
+        # If still no transcription, fail
+        if not transcription:
+            raise Exception("Could not transcribe video using any available method")
+        
+        # Save transcription files
+        job_statuses[job_id]["status"] = "saving_files"
+        job_statuses[job_id]["percent"] = 90
         await broadcast_status_update(job_id, job_statuses[job_id])
         
-        # Create a temporary directory for processing
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Download audio
-            audio_path = whisper_service.download_audio_from_youtube(request.url, temp_dir)
-            if not audio_path:
-                raise Exception("Failed to download audio")
-            
-            # Update status to transcribing
-            job_statuses[job_id]["status"] = "transcribing"
-            job_statuses[job_id]["percent"] = 50
-            await broadcast_status_update(job_id, job_statuses[job_id])
-            
-            # Transcribe audio
-            transcription = whisper_service.transcribe_audio_file(audio_path, request.lang)
-            if not transcription:
-                raise Exception("Failed to transcribe audio")
-            
-            # Save transcription files
-            files = await save_transcription_files(job_id, transcription)
-            
-            # Update status to complete
-            job_statuses[job_id]["status"] = "complete"
-            job_statuses[job_id]["percent"] = 100
-            job_statuses[job_id]["files"] = files
-            await broadcast_status_update(job_id, job_statuses[job_id])
-            
-            # Cache the result
-            # Note: In a production environment, you'd want to cache the actual files,
-            # not just the paths
-            await get_cache_service().set(cache_key, {
-                "files": files,
-                "transcription": transcription
-            })
+        files = await save_transcription_files(job_id, transcription)
+        
+        # Update status to complete
+        job_statuses[job_id]["status"] = "complete"
+        job_statuses[job_id]["percent"] = 100
+        job_statuses[job_id]["files"] = files
+        await broadcast_status_update(job_id, job_statuses[job_id])
+        
+        # Cache the result
+        await get_cache_service().set(cache_key, {
+            "files": files,
+            "transcription": transcription
+        })
+        
+        logger.info(f"Transcription completed successfully for video {video_id}")
             
     except Exception as e:
         logger.error(f"Error processing transcription: {e}")
