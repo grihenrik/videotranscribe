@@ -1,19 +1,34 @@
 // Initialize Feather icons
 document.addEventListener('DOMContentLoaded', () => {
-    feather.replace();
+    console.log('DOM Content Loaded!');
+    console.log('Document ready state:', document.readyState);
+    console.log('All forms on page:', document.querySelectorAll('form'));
+    console.log('All buttons on page:', document.querySelectorAll('button'));
+    
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
     initTranscriptionForm();
 });
 
 function initTranscriptionForm() {
+    console.log('Initializing transcription form...');
     const form = document.getElementById('transcriptionForm');
     const submitButton = document.getElementById('transcribeBtn');
     const resultSection = document.getElementById('results-container');
     
+    console.log('Form element:', form);
+    console.log('Submit button:', submitButton);
+    
     // Check if elements exist to prevent errors
     if (!form || !submitButton) {
         console.log('Form elements not found, skipping initialization');
+        console.log('Available form elements:', document.querySelectorAll('form'));
+        console.log('Available buttons:', document.querySelectorAll('button'));
         return;
     }
+    
+    console.log('Form initialization successful!');
     
     // Download links (these exist in the HTML)
     const downloadTxt = document.getElementById('downloadTxt');
