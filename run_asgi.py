@@ -68,8 +68,9 @@ def run_uvicorn_server():
                                  bufsize=1)
         
         # Print output in real-time
-        for line in process.stdout:
-            print(line.strip())
+        if process.stdout:
+            for line in process.stdout:
+                print(line.strip())
         
         process.wait()
         
