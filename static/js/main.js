@@ -223,10 +223,47 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
+    // Global variable to track active polling
+    let activePollingInterval = null;
+    let isPolling = false;
+    
     function checkTranscriptionStatus(jobId) {
         console.log('Checking transcription status for job:', jobId);
         
-        const checkInterval = setInterval(() => {
+        // Clear any existing polling to prevent multiple intervals
+        if (activePollingInterval) {
+            clearInterval(activePollingInterval);
+            console.log('Cleared existing polling interval');
+        }
+        
+        // Prevent multiple concurrent polling
+        if (isPolling) {
+            console.log('Already polling, skipping new poll request');
+            return;
+        }
+        
+        isPolling = true;
+        let pollCount = 0;
+        const maxPolls = 100; // Maximum 100 polls (5 minutes at 3-second intervals)
+        
+        activePollingInterval = setInterval(() => {
+            pollCount++;
+            
+            // Safety check: stop after max polls
+            if (pollCount > maxPolls) {
+                clearInterval(activePollingInterval);
+                activePollingInterval = null;
+                isPolling = false;
+                console.log('Stopped polling: Maximum poll count reached');
+                
+                const statusBadge = document.getElementById('job-status');
+                if (statusBadge && !statusBadge.textContent.includes('Completed')) {
+                    statusBadge.textContent = 'Timeout';
+                    statusBadge.className = 'badge bg-warning';
+                }
+                return;
+            }
+            
             fetch(`/api/job/${jobId}/status`)
                 .then(response => response.json())
                 .then(status => {
@@ -237,8 +274,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     if (status.status === 'complete') {
                         // Transcription completed successfully
+                        clearInterval(activePollingInterval);
+                        activePollingInterval = null;
+                        isPolling = false;
+                        
                         enableDownloadButtons();
-                        clearInterval(checkInterval);
                         
                         if (statusBadge) {
                             statusBadge.textContent = 'Completed';
@@ -249,11 +289,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             progressBar.textContent = '100%';
                         }
                         
-                        console.log('Transcription completed, download buttons enabled');
+                        console.log('✅ Transcription completed, polling stopped');
                         
                     } else if (status.status === 'error') {
-                        // Transcription failed
-                        clearInterval(checkInterval);
+                        // Transcription failed - STOP POLLING IMMEDIATELY
+                        clearInterval(activePollingInterval);
+                        activePollingInterval = null;
+                        isPolling = false;
                         
                         if (statusBadge) {
                             statusBadge.textContent = 'Failed';
@@ -261,9 +303,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         
                         const errorMsg = status.error || 'Unknown error';
-                        alert(`Transcription failed: ${errorMsg}\n\nThis may be due to YouTube access restrictions. Try a different video.`);
+                        console.log('❌ Transcription failed, polling stopped:', errorMsg);
                         
-                        console.log('Transcription failed:', errorMsg);
+                        // Show error message only once
+                        alert(`Transcription failed: ${errorMsg}\n\nThis may be due to YouTube access restrictions. Try a different video.`);
                         
                     } else {
                         // Still processing - update progress
@@ -276,25 +319,19 @@ document.addEventListener('DOMContentLoaded', function() {
                             progressBar.textContent = status.percent + '%';
                         }
                         
-                        console.log(`Still processing: ${status.status} (${status.percent || 0}%)`);
+                        console.log(`⏳ Still processing: ${status.status} (${status.percent || 0}%)`);
                     }
                 })
                 .catch(error => {
-                    console.log('Error checking status:', error.message);
+                    console.log('⚠️ Error checking status:', error.message);
+                    
+                    // Stop polling on fetch errors too
+                    clearInterval(activePollingInterval);
+                    activePollingInterval = null;
+                    isPolling = false;
+                    console.log('Polling stopped due to fetch error');
                 });
         }, 3000); // Check every 3 seconds
-        
-        // Stop checking after 5 minutes
-        setTimeout(() => {
-            clearInterval(checkInterval);
-            console.log('Stopped checking transcription status (timeout)');
-            
-            const statusBadge = document.getElementById('job-status');
-            if (statusBadge && !statusBadge.textContent.includes('Completed')) {
-                statusBadge.textContent = 'Timeout';
-                statusBadge.className = 'badge bg-warning';
-            }
-        }, 300000);
     }
     
     function enableDownloadButtons() {
@@ -312,4 +349,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-console.log('JavaScript file loaded completely (v2025090201)');
+console.log('JavaScript file loaded completely (v2025090202)');
