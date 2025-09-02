@@ -70,7 +70,7 @@ class MemoryCacheService(CacheService):
         self.default_ttl = ttl
         
         # Start expiration loop
-        self._expire_task = asyncio.create_task(self._expire_loop())
+        self._expire_task = None
 
     async def get(self, key: str) -> Optional[Any]:
         """

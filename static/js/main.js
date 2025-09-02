@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initTranscriptionForm() {
     const form = document.getElementById('transcriptionForm');
     const submitButton = document.getElementById('transcribeBtn');
-    const resultSection = document.getElementById('resultSection');
+    const resultSection = document.getElementById('results-container');
     
     // Check if elements exist to prevent errors
     if (!form || !submitButton) {
@@ -44,7 +44,7 @@ function initTranscriptionForm() {
         
         try {
             // Submit transcription request
-            const response = await fetch('/transcribe', {
+            const response = await fetch('/api/transcribe', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -70,9 +70,10 @@ function initTranscriptionForm() {
             window.jobStartTime = Date.now();
             
             // Show results container
-            resultsContainer.classList.remove('d-none');
+            resultSection.classList.remove('d-none');
             
             // Display video title if available, otherwise ID
+            const videoIdElement = document.getElementById('video-id');
             if (data.video_title) {
                 videoIdElement.textContent = data.video_title;
             } else {
@@ -80,17 +81,17 @@ function initTranscriptionForm() {
             }
             
             // Update download links
-            downloadTxt.href = data.download_links.txt;
-            downloadSrt.href = data.download_links.srt;
-            downloadVtt.href = data.download_links.vtt;
+            if (downloadTxt) downloadTxt.href = data.download_links.txt;
+            if (downloadSrt) downloadSrt.href = data.download_links.srt;
+            if (downloadVtt) downloadVtt.href = data.download_links.vtt;
             
             // Start polling for status updates to show progress
             pollJobStatus(data.job_id);
             
             // Auto-show downloads after 20 seconds and every 10 seconds after
             setTimeout(() => {
-                const progressSection = document.getElementById('processingSection');
-                const downloadSection = document.getElementById('downloadSection');
+                const progressSection = document.getElementById('processing-section');
+                const downloadSection = document.getElementById('download-section');
                 
                 // Hide progress and show downloads
                 progressSection.classList.add('d-none');
@@ -101,8 +102,8 @@ function initTranscriptionForm() {
             
             // Also try every 10 seconds after that
             const downloadChecker = setInterval(() => {
-                const progressSection = document.getElementById('processingSection');
-                const downloadSection = document.getElementById('downloadSection');
+                const progressSection = document.getElementById('processing-section');
+                const downloadSection = document.getElementById('download-section');
                 
                 if (downloadSection.classList.contains('d-none')) {
                     progressSection.classList.add('d-none');
@@ -126,7 +127,7 @@ function initTranscriptionForm() {
     async function pollJobStatus(jobId) {
         let interval = setInterval(async () => {
             try {
-                const response = await fetch(`/status/${jobId}`);
+                const response = await fetch(`/api/job/${jobId}/status`);
                 
                 if (!response.ok) {
                     throw new Error('Failed to get job status');
