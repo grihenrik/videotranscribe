@@ -312,4 +312,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-console.log('JavaScript file loaded completely');
+console.log('JavaScript file loaded completely (v2025090201)');
