@@ -12,52 +12,169 @@
         <header class="text-center mb-5">
             <h1 class="display-4 mb-3">YouTube Transcription Tool</h1>
             <p class="lead">Extract text from YouTube videos using captions or speech recognition</p>
+            
+            <!-- Navigation Tabs -->
+            <div class="d-flex justify-content-center mb-4">
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="single-tab" href="#single" data-bs-toggle="pill">Single Video</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="batch-tab" href="#batch" data-bs-toggle="pill">Batch Processing</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="playlist-tab" href="#playlist" data-bs-toggle="pill">Playlist</a>
+                    </li>
+                </ul>
+            </div>
         </header>
 
         <div class="row justify-content-center">
             <div class="col-md-8">
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h2 class="h5 mb-0">Submit a Video for Transcription</h2>
+                <!-- Tab Content -->
+                <div class="tab-content">
+                    <!-- Single Video Tab -->
+                    <div class="tab-pane fade show active" id="single" role="tabpanel">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h2 class="h5 mb-0">Submit a Video for Transcription</h2>
+                            </div>
+                            <div class="card-body">
+                                <form id="transcriptionForm">
+                                    <div class="mb-3">
+                                        <label for="youtubeUrl" class="form-label">YouTube URL</label>
+                                        <input type="url" class="form-control" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." required>
+                                        <div class="form-text">Enter the full URL of a YouTube video</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="transcriptionMode" class="form-label">Transcription Mode</label>
+                                            <select class="form-select" id="transcriptionMode">
+                                                <option value="auto" selected>Auto (Try captions, fallback to Whisper)</option>
+                                                <option value="captions">YouTube Captions Only</option>
+                                                <option value="whisper">Whisper Speech Recognition Only</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="language" class="form-label">Language</label>
+                                            <select class="form-select" id="language">
+                                                <option value="en" selected>English</option>
+                                                <option value="es">Spanish</option>
+                                                <option value="fr">French</option>
+                                                <option value="de">German</option>
+                                                <option value="it">Italian</option>
+                                                <option value="pt">Portuguese</option>
+                                                <option value="ru">Russian</option>
+                                                <option value="ja">Japanese</option>
+                                                <option value="zh">Chinese</option>
+                                                <option value="ko">Korean</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary btn-lg" id="transcribeBtn">
+                                            Transcribe Video
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <form id="transcriptionForm">
-                            <div class="mb-3">
-                                <label for="youtubeUrl" class="form-label">YouTube URL</label>
-                                <input type="url" class="form-control" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." required>
-                                <div class="form-text">Enter the full URL of a YouTube video</div>
+
+                    <!-- Batch Processing Tab -->
+                    <div class="tab-pane fade" id="batch" role="tabpanel">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h2 class="h5 mb-0">Batch Process Multiple Videos</h2>
                             </div>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="transcriptionMode" class="form-label">Transcription Mode</label>
-                                    <select class="form-select" id="transcriptionMode">
-                                        <option value="auto" selected>Auto (Try captions, fallback to Whisper)</option>
-                                        <option value="captions">YouTube Captions Only</option>
-                                        <option value="whisper">Whisper Speech Recognition Only</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="language" class="form-label">Language</label>
-                                    <select class="form-select" id="language">
-                                        <option value="en" selected>English</option>
-                                        <option value="es">Spanish</option>
-                                        <option value="fr">French</option>
-                                        <option value="de">German</option>
-                                        <option value="it">Italian</option>
-                                        <option value="pt">Portuguese</option>
-                                        <option value="ru">Russian</option>
-                                        <option value="ja">Japanese</option>
-                                        <option value="zh">Chinese</option>
-                                        <option value="ko">Korean</option>
-                                    </select>
-                                </div>
+                            <div class="card-body">
+                                <form id="batchForm">
+                                    <div class="mb-3">
+                                        <label for="batchUrls" class="form-label">YouTube Video URLs</label>
+                                        <textarea class="form-control" id="batchUrls" rows="8" placeholder="Enter one YouTube URL per line:&#10;https://www.youtube.com/watch?v=video1&#10;https://www.youtube.com/watch?v=video2&#10;https://www.youtube.com/watch?v=video3" required></textarea>
+                                        <div class="form-text">Enter one YouTube URL per line. You can process up to 10 videos at once.</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="batchMode" class="form-label">Transcription Mode</label>
+                                            <select class="form-select" id="batchMode">
+                                                <option value="auto" selected>Auto (Try captions, fallback to Whisper)</option>
+                                                <option value="captions">YouTube Captions Only</option>
+                                                <option value="whisper">Whisper Speech Recognition Only</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="batchLanguage" class="form-label">Language</label>
+                                            <select class="form-select" id="batchLanguage">
+                                                <option value="en" selected>English</option>
+                                                <option value="es">Spanish</option>
+                                                <option value="fr">French</option>
+                                                <option value="de">German</option>
+                                                <option value="it">Italian</option>
+                                                <option value="pt">Portuguese</option>
+                                                <option value="ru">Russian</option>
+                                                <option value="ja">Japanese</option>
+                                                <option value="zh">Chinese</option>
+                                                <option value="ko">Korean</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-success btn-lg" id="batchBtn">
+                                            Process Batch
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary btn-lg" id="transcribeBtn">
-                                    Transcribe Video
-                                </button>
+                        </div>
+                    </div>
+
+                    <!-- Playlist Tab -->
+                    <div class="tab-pane fade" id="playlist" role="tabpanel">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h2 class="h5 mb-0">Process YouTube Playlist</h2>
                             </div>
-                        </form>
+                            <div class="card-body">
+                                <form id="playlistForm">
+                                    <div class="mb-3">
+                                        <label for="playlistUrl" class="form-label">YouTube Playlist URL</label>
+                                        <input type="url" class="form-control" id="playlistUrl" placeholder="https://www.youtube.com/playlist?list=..." required>
+                                        <div class="form-text">Enter the complete YouTube playlist URL</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="playlistMode" class="form-label">Transcription Mode</label>
+                                            <select class="form-select" id="playlistMode">
+                                                <option value="auto" selected>Auto (Try captions, fallback to Whisper)</option>
+                                                <option value="captions">YouTube Captions Only</option>
+                                                <option value="whisper">Whisper Speech Recognition Only</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="playlistLanguage" class="form-label">Language</label>
+                                            <select class="form-select" id="playlistLanguage">
+                                                <option value="en" selected>English</option>
+                                                <option value="es">Spanish</option>
+                                                <option value="fr">French</option>
+                                                <option value="de">German</option>
+                                                <option value="it">Italian</option>
+                                                <option value="pt">Portuguese</option>
+                                                <option value="ru">Russian</option>
+                                                <option value="ja">Japanese</option>
+                                                <option value="zh">Chinese</option>
+                                                <option value="ko">Korean</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-info btn-lg" id="playlistBtn">
+                                            Process Playlist
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -97,6 +214,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/main.js?v=2025090202"></script>
+    <script src="/js/main.js?v=2025090203"></script>
 </body>
 </html>
