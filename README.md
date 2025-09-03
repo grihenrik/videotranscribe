@@ -1,116 +1,224 @@
 # YouTube Transcription Tool
 
-A powerful tool for transcribing YouTube videos with automatic caption extraction and AI-powered speech recognition.
+A modern, full-stack web application that transcribes YouTube videos using either YouTube's available captions or OpenAI's Whisper speech-to-text model. Built with FastAPI and featuring real-time progress updates.
 
-## Features
+## ✨ Features
 
-- **Video Transcription**: Convert YouTube videos to text using captions or OpenAI Whisper
-- **Multiple Output Formats**: Download transcriptions as TXT, SRT, or VTT files
-- **Batch Processing**: Transcribe multiple videos at once
-- **Playlist Support**: Process entire YouTube playlists with a single request
-- **OAuth Authentication**: Sign in with Google, Twitter, or Discord
-- **User Dashboard**: Track transcription history and manage settings
-- **Admin Panel**: Monitor usage and manage system settings
+- **🎥 Single Video Transcription** - Process individual YouTube videos
+- **📚 Batch Processing** - Transcribe multiple videos at once  
+- **🎵 Playlist Support** - Process entire YouTube playlists
+- **📝 Multiple Output Formats** - Download transcriptions as TXT, SRT, or VTT files
+- **⚡ Real-time Progress** - Live updates via WebSocket connections
+- **🔄 Smart Mode Selection** - Auto-detect best transcription method
+- **🌐 Modern Web Interface** - Clean, responsive design with Bootstrap
 
-## Authentication Setup
+## 🚀 Quick Start
 
-The application supports OAuth authentication with Google, Twitter, and Discord. Follow these steps to set up authentication:
+### Prerequisites
 
-### Option 1: Quick Setup Using Admin Panel
+- Python 3.11+
+- FFmpeg (for audio processing)
+- OpenAI API key (optional, for Whisper transcription)
 
-1. Create an admin user by running:
-   ```
-   python create_admin.py your-email@example.com
-   ```
-   
-2. Log in with any OAuth provider that matches your admin email
-   
-3. Navigate to Admin > OAuth Settings to configure providers
+### Installation
 
-### Option 2: Manual Configuration
-
-1. Register your application with OAuth providers:
-
-   - **Google**: [Google Cloud Console](https://console.cloud.google.com/)
-   - **Twitter**: [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
-   - **Discord**: [Discord Developer Portal](https://discord.com/developers/applications)
-
-2. Set the following callback URLs for each provider:
-   - Google: `https://your-domain.com/auth/google/authorized`
-   - Twitter: `https://your-domain.com/auth/twitter/authorized`
-   - Discord: `https://your-domain.com/auth/discord/authorized`
-
-3. Add the client IDs and secrets to your environment variables:
-   ```
-   GOOGLE_CLIENT_ID=your_google_client_id
-   GOOGLE_CLIENT_SECRET=your_google_client_secret
-   TWITTER_CLIENT_ID=your_twitter_client_id
-   TWITTER_CLIENT_SECRET=your_twitter_client_secret
-   DISCORD_CLIENT_ID=your_discord_client_id
-   DISCORD_CLIENT_SECRET=your_discord_client_secret
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd youtube-transcription-tool
    ```
 
-## User Management
-
-### User Roles
-
-- **Regular Users**: Can transcribe videos and access their own history
-- **Administrators**: Can access the admin panel, manage OAuth settings, and view system analytics
-
-### Making a User an Administrator
-
-1. Create an admin through the setup script:
-   ```
-   python create_admin.py target-email@example.com
+2. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
    ```
 
-2. Or update a user's admin status in the database directly:
-   ```sql
-   UPDATE users SET is_admin = TRUE WHERE email = 'target-email@example.com';
+3. **Set up environment variables** (optional)
+   ```bash
+   export OPENAI_API_KEY="your-openai-api-key"
    ```
 
-## Using the Transcription Tool
+4. **Start the application**
+   ```bash
+   python main.py
+   ```
 
-1. **Single Video Transcription**:
-   - Enter a YouTube URL
-   - Select transcription method (Auto, Captions, or Whisper)
-   - Choose language (for Whisper)
-   - Click "Transcribe Video"
+5. **Access the web interface**
+   Open your browser to `http://localhost:5000`
 
-2. **Batch Processing**:
-   - Enter multiple YouTube URLs (one per line)
-   - Configure settings
-   - Click "Start Batch Processing"
+## 🛠️ Usage
 
-3. **Playlist Processing**:
-   - Enter a YouTube playlist URL
-   - Configure settings
-   - Click "Process Playlist"
+### Single Video Transcription
+1. Navigate to the **Single Video** tab
+2. Enter a YouTube URL
+3. Select transcription mode:
+   - **Auto** - Try captions first, fallback to Whisper
+   - **Captions** - YouTube captions only
+   - **Whisper** - AI speech recognition only
+4. Choose target language
+5. Click **Transcribe Video**
 
-## Technical Details
+### Batch Processing
+1. Go to the **Batch Processing** tab
+2. Enter multiple YouTube URLs (one per line)
+3. Configure processing settings
+4. Click **Process Batch**
 
-- Built with Flask and SQLAlchemy
-- Uses OpenAI's Whisper for speech recognition
-- Stores data in PostgreSQL database
-- Supports OAuth 2.0 authentication
-- Real-time progress updates
+### Playlist Processing
+1. Switch to the **Playlist** tab
+2. Enter a YouTube playlist URL
+3. Set your preferences
+4. Click **Process Playlist**
 
-## Environment Variables
+## 📁 Project Structure
 
-- `DATABASE_URL`: PostgreSQL database connection string
-- `SESSION_SECRET`: Secret key for session encryption
-- `OPENAI_API_KEY`: API key for OpenAI's Whisper service
-- OAuth provider credentials (see Authentication Setup)
+```
+├── app/                    # FastAPI application
+│   ├── api/               # API routes and endpoints
+│   │   ├── transcribe.py  # Transcription endpoints
+│   │   ├── download.py    # File download endpoints
+│   │   └── progress_ws.py # WebSocket progress updates
+│   ├── core/              # Core configuration
+│   │   ├── config.py      # Application settings
+│   │   └── logging.py     # Logging configuration
+│   ├── models/            # Pydantic data models
+│   │   ├── request.py     # Request models
+│   │   └── response.py    # Response models
+│   ├── services/          # Business logic services
+│   │   ├── youtube_service.py    # YouTube API interactions
+│   │   ├── whisper_service.py    # Whisper transcription
+│   │   └── cache_service.py      # Caching layer
+│   └── utils/             # Utility functions
+│       ├── file_manager.py       # File operations
+│       ├── xml_parser.py         # Caption parsing
+│       └── youtube.py            # YouTube helpers
+├── static/                # Frontend assets
+│   ├── css/              # Stylesheets
+│   ├── js/               # JavaScript files
+│   └── index.html        # Main web interface
+├── tests/                 # Test files
+├── main.py               # Application entry point
+└── README.md             # This file
+```
 
-## Troubleshooting
+## ⚙️ Configuration
 
-If you encounter issues with OAuth login:
+The application can be configured through environment variables:
 
-1. Check that the provider is enabled in Admin > OAuth Settings
-2. Verify the correct client ID and secret are configured
-3. Ensure the callback URL in your OAuth provider dashboard matches exactly
-4. Check that your email address is the same across providers if using multiple
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OPENAI_API_KEY` | OpenAI API key for Whisper | None |
+| `WHISPER_MODEL` | Whisper model size (tiny, base, small, medium, large) | base |
+| `CACHE_TTL` | Cache time-to-live in seconds | 3600 |
+| `LOG_LEVEL` | Logging level | INFO |
 
-## License
+## 🔧 API Reference
 
-This project is open source and available under the MIT license.
+### Core Endpoints
+
+- `POST /api/transcribe` - Submit transcription job
+- `GET /api/job/{job_id}/status` - Check job status
+- `GET /api/download/{job_id}` - Download transcription files
+- `WebSocket /api/ws/progress/{job_id}` - Real-time progress updates
+
+### Example API Usage
+
+```python
+import requests
+
+# Submit transcription job
+response = requests.post('/api/transcribe', json={
+    'url': 'https://www.youtube.com/watch?v=VIDEO_ID',
+    'mode': 'auto',
+    'lang': 'en'
+})
+
+job_data = response.json()
+job_id = job_data['job_id']
+
+# Check status
+status = requests.get(f'/api/job/{job_id}/status').json()
+
+# Download when complete
+if status['status'] == 'complete':
+    transcript = requests.get(f'/api/download/{job_id}?format=txt')
+```
+
+## 🚀 Deployment
+
+### Development
+```bash
+# Start with auto-reload
+python main.py
+```
+
+### Production
+```bash
+# Start with uvicorn (recommended)
+uvicorn main:app --host 0.0.0.0 --port 5000 --workers 4
+
+# Or with gunicorn + uvicorn workers
+gunicorn main:app --bind 0.0.0.0:5000 --worker-class uvicorn.workers.UvicornWorker --workers 4
+```
+
+### Docker
+```bash
+# Build image
+docker build -t youtube-transcription .
+
+# Run container
+docker run -p 5000:5000 -e OPENAI_API_KEY=your-key youtube-transcription
+```
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+**FFmpeg Not Found**
+```bash
+# Install FFmpeg
+sudo apt install ffmpeg  # Ubuntu/Debian
+brew install ffmpeg       # macOS
+```
+
+**YouTube Access Blocked**
+- Try using "captions" mode only
+- Some videos may have restricted access
+- Consider using different videos for testing
+
+**Whisper Transcription Fails**
+- Ensure OPENAI_API_KEY is set
+- Check API quota and billing
+- Verify internet connection
+
+## 📈 Performance Tips
+
+- Use "captions" mode when available (faster, no API costs)
+- Enable caching for repeated requests
+- Consider running with multiple workers in production
+- Monitor memory usage with large batch operations
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [OpenAI Whisper](https://openai.com/research/whisper) - Speech recognition AI
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) - YouTube video processing
+- [FastAPI](https://fastapi.tiangolo.com/) - Modern web framework
+- [Bootstrap](https://getbootstrap.com/) - UI components
+
+## 📞 Support
+
+- 📧 Email: [support@example.com](mailto:support@example.com)
+- 🐛 Issues: [GitHub Issues](https://github.com/your-repo/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/your-repo/discussions)
