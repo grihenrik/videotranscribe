@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     USE_GPU: bool = os.getenv("USE_GPU", "false").lower() == "true"
     
     class Config:
-        env_file = ".env"
+        # Don't use .env file in Replit - use Replit Secrets instead
         case_sensitive = True
 
 
