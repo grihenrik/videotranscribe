@@ -6,6 +6,7 @@ import os
 import json
 import tempfile
 import subprocess
+import re
 from openai import OpenAI
 
 def get_openai_client():
@@ -14,6 +15,65 @@ def get_openai_client():
     if not api_key:
         raise ValueError("OpenAI API key not found. Please set OPENAI_API_KEY in your environment variables or .env file")
     return OpenAI(api_key=api_key)
+
+def extract_playlist_videos(playlist_url):
+    """
+    Extract individual video URLs and titles from a YouTube playlist.
+    
+    Args:
+        playlist_url (str): YouTube playlist URL
+        
+    Returns:
+        list: List of dictionaries with 'url', 'title', and 'id' for each video
+    """
+    try:
+        # Use yt-dlp to extract playlist information
+        cmd = [
+            'yt-dlp',
+            '--flat-playlist',
+            '--print', '%(id)s|%(title)s|%(webpage_url)s',
+            playlist_url
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        
+        videos = []
+        for line in result.stdout.strip().split('\n'):
+            if line and '|' in line:
+                parts = line.split('|', 2)
+                if len(parts) >= 3:
+                    video_id = parts[0]
+                    title = parts[1]
+                    url = parts[2]
+                    
+                    # Clean up title for filename usage
+                    safe_title = re.sub(r'[<>:"/\\|?*]', '_', title)
+                    safe_title = safe_title.strip()
+                    
+                    videos.append({
+                        'id': video_id,
+                        'title': safe_title,
+                        'url': url
+                    })
+        
+        return videos
+        
+    except subprocess.CalledProcessError as e:
+        raise Exception(f"Failed to extract playlist videos: {e.stderr}")
+    except Exception as e:
+        raise Exception(f"Error extracting playlist: {str(e)}")
+
+def is_playlist_url(url):
+    """
+    Check if a URL contains a playlist parameter.
+    
+    Args:
+        url (str): YouTube URL to check
+        
+    Returns:
+        bool: True if URL contains playlist parameter
+    """
+    return 'list=' in url or '/playlist?' in url
 
 def transcribe_audio_file(file_path, language=None):
     """

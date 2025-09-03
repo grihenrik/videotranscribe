@@ -182,14 +182,18 @@ document.addEventListener('DOMContentLoaded', function() {
             resultsContainer.classList.remove('d-none');
         }
         
-        // Update video info
+        // Update info based on type (playlist vs single video)
         const videoIdElement = document.getElementById('video-id');
         if (videoIdElement) {
-            videoIdElement.textContent = data.video_id || 'Processing...';
+            if (data.is_playlist) {
+                videoIdElement.textContent = 'Playlist Processing...';
+            } else {
+                videoIdElement.textContent = data.video_id || 'Processing...';
+            }
         }
         
         // Set up download buttons (initially disabled)
-        setupDownloadButtons(data.download_links, data.job_id);
+        setupDownloadButtons(data.download_links, data.job_id, data.is_playlist);
         
         // Show downloads section immediately but with disabled buttons
         const downloadSection = document.getElementById('download-section');
@@ -200,43 +204,88 @@ document.addEventListener('DOMContentLoaded', function() {
         // Start checking for completion
         checkTranscriptionStatus(data.job_id);
         
-        alert(`✅ Transcription started successfully!\nJob ID: ${data.job_id}\nDownload buttons will be enabled when ready.`);
+        const successMessage = data.is_playlist 
+            ? `✅ Playlist transcription started successfully!\nJob ID: ${data.job_id}\nDownload button will be enabled when all videos are processed.`
+            : `✅ Transcription started successfully!\nJob ID: ${data.job_id}\nDownload buttons will be enabled when ready.`;
+        
+        alert(successMessage);
     }
     
-    function setupDownloadButtons(downloadLinks, jobId) {
+    function setupDownloadButtons(downloadLinks, jobId, isPlaylist) {
         const txtBtn = document.getElementById('download-txt');
         const srtBtn = document.getElementById('download-srt');
         const vttBtn = document.getElementById('download-vtt');
         
-        // Initially disable all buttons
-        [txtBtn, srtBtn, vttBtn].forEach(btn => {
-            if (btn) {
-                btn.classList.add('disabled');
-                btn.style.pointerEvents = 'none';
-                btn.style.opacity = '0.5';
+        if (isPlaylist) {
+            // For playlists, hide individual format buttons and show/create ZIP download button
+            [txtBtn, srtBtn, vttBtn].forEach(btn => {
+                if (btn) {
+                    btn.style.display = 'none';
+                }
+            });
+            
+            // Create or update ZIP download button
+            let zipBtn = document.getElementById('download-zip');
+            if (!zipBtn) {
+                zipBtn = document.createElement('button');
+                zipBtn.id = 'download-zip';
+                zipBtn.className = 'btn btn-success disabled';
+                zipBtn.innerHTML = '<i class="fas fa-download"></i> Download All (ZIP)';
+                zipBtn.style.pointerEvents = 'none';
+                zipBtn.style.opacity = '0.5';
+                
+                // Add to download section
+                const downloadSection = document.getElementById('download-section');
+                if (downloadSection) {
+                    downloadSection.appendChild(zipBtn);
+                }
             }
-        });
-        
-        // Set up click handlers for direct download
-        if (txtBtn && downloadLinks?.txt) {
-            txtBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                downloadFile(downloadLinks.txt, `transcription-${jobId}.txt`);
+            
+            // Set up ZIP download handler
+            if (downloadLinks?.zip) {
+                zipBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    downloadFile(downloadLinks.zip, `playlist_transcriptions_${jobId}.zip`);
+                });
+            }
+        } else {
+            // For single videos, show individual format buttons and hide ZIP button
+            [txtBtn, srtBtn, vttBtn].forEach(btn => {
+                if (btn) {
+                    btn.style.display = 'inline-block';
+                    btn.classList.add('disabled');
+                    btn.style.pointerEvents = 'none';
+                    btn.style.opacity = '0.5';
+                }
             });
-        }
-        
-        if (srtBtn && downloadLinks?.srt) {
-            srtBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                downloadFile(downloadLinks.srt, `transcription-${jobId}.srt`);
-            });
-        }
-        
-        if (vttBtn && downloadLinks?.vtt) {
-            vttBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                downloadFile(downloadLinks.vtt, `transcription-${jobId}.vtt`);
-            });
+            
+            // Hide ZIP button if it exists
+            const zipBtn = document.getElementById('download-zip');
+            if (zipBtn) {
+                zipBtn.style.display = 'none';
+            }
+            
+            // Set up click handlers for individual format downloads
+            if (txtBtn && downloadLinks?.txt) {
+                txtBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    downloadFile(downloadLinks.txt, `transcription-${jobId}.txt`);
+                });
+            }
+            
+            if (srtBtn && downloadLinks?.srt) {
+                srtBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    downloadFile(downloadLinks.srt, `transcription-${jobId}.srt`);
+                });
+            }
+            
+            if (vttBtn && downloadLinks?.vtt) {
+                vttBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    downloadFile(downloadLinks.vtt, `transcription-${jobId}.vtt`);
+                });
+            }
         }
     }
     
@@ -392,9 +441,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const txtBtn = document.getElementById('download-txt');
         const srtBtn = document.getElementById('download-srt');
         const vttBtn = document.getElementById('download-vtt');
+        const zipBtn = document.getElementById('download-zip');
         
-        [txtBtn, srtBtn, vttBtn].forEach(btn => {
-            if (btn) {
+        // Enable all visible buttons
+        [txtBtn, srtBtn, vttBtn, zipBtn].forEach(btn => {
+            if (btn && btn.style.display !== 'none') {
                 btn.classList.remove('disabled');
                 btn.style.pointerEvents = 'auto';
                 btn.style.opacity = '1';

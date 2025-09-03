@@ -34,7 +34,9 @@ try:
         transcribe_audio_file, 
         download_audio_from_youtube, 
         convert_to_srt, 
-        convert_to_vtt
+        convert_to_vtt,
+        extract_playlist_videos,
+        is_playlist_url
     )
     WHISPER_AVAILABLE = True
     logger.info("✅ Standalone Whisper service loaded successfully")
@@ -72,10 +74,131 @@ def fallback_download_audio_from_youtube(url, output_path=None):
         f.write("dummy audio file")
     return dummy_file
 
+def fallback_extract_playlist_videos(playlist_url):
+    """Fallback playlist extraction for testing"""
+    return [{
+        'id': 'mock_video_1',
+        'title': 'Mock Video 1',
+        'url': 'https://www.youtube.com/watch?v=mock_video_1'
+    }]
+
+def fallback_is_playlist_url(url):
+    """Fallback playlist detection"""
+    return 'list=' in url or '/playlist?' in url
+
 # Set fallback functions if Whisper is not available
 if not WHISPER_AVAILABLE:
     transcribe_audio_file = fallback_transcribe_audio_file
     download_audio_from_youtube = fallback_download_audio_from_youtube
+    extract_playlist_videos = fallback_extract_playlist_videos
+    is_playlist_url = fallback_is_playlist_url
+
+def real_transcribe_playlist(job_id, playlist_url, mode, lang):
+    """Transcribe all videos in a YouTube playlist"""
+    try:
+        logger.info(f"Starting playlist transcription for job {job_id}")
+        
+        # Update status to extracting playlist
+        job_statuses[job_id]['status'] = 'extracting_playlist'
+        job_statuses[job_id]['percent'] = 5
+        
+        # Extract videos from playlist
+        logger.info(f"Extracting videos from playlist: {playlist_url}")
+        videos = extract_playlist_videos(playlist_url)
+        
+        if not videos:
+            raise Exception("No videos found in the playlist or playlist is private/unavailable.")
+        
+        logger.info(f"Found {len(videos)} videos in playlist")
+        job_statuses[job_id]['total_videos'] = len(videos)
+        job_statuses[job_id]['completed_videos'] = 0
+        
+        # Create save directory
+        save_dir = os.path.join('tmp', job_id)
+        os.makedirs(save_dir, exist_ok=True)
+        
+        # Process each video
+        for i, video in enumerate(videos):
+            try:
+                logger.info(f"Processing video {i+1}/{len(videos)}: {video['title']}")
+                
+                # Update progress
+                base_progress = 10 + (i * 80 // len(videos))
+                job_statuses[job_id]['status'] = f'processing_video_{i+1}_of_{len(videos)}'
+                job_statuses[job_id]['percent'] = base_progress
+                job_statuses[job_id]['current_video'] = video['title']
+                
+                # Download audio for this video
+                logger.info(f"Downloading audio for: {video['title']}")
+                temp_dir = tempfile.mkdtemp(dir='tmp')
+                audio_file = download_audio_from_youtube(video['url'], temp_dir)
+                
+                if not audio_file:
+                    logger.warning(f"Failed to download audio for video: {video['title']}")
+                    continue
+                
+                # Update progress
+                job_statuses[job_id]['percent'] = base_progress + 20
+                
+                # Transcribe using Whisper
+                logger.info(f"Transcribing: {video['title']}")
+                transcription_result = transcribe_audio_file(audio_file, lang if lang != 'auto' else None)
+                
+                if not transcription_result:
+                    logger.warning(f"Failed to transcribe video: {video['title']}")
+                    continue
+                
+                # Update progress
+                job_statuses[job_id]['percent'] = base_progress + 60
+                
+                # Save files with video title as filename
+                safe_title = video['title'][:100]  # Limit filename length
+                txt_path = os.path.join(save_dir, f"{safe_title}.txt")
+                srt_path = os.path.join(save_dir, f"{safe_title}.srt")
+                vtt_path = os.path.join(save_dir, f"{safe_title}.vtt")
+                
+                # Write text file
+                with open(txt_path, 'w', encoding='utf-8') as f:
+                    f.write(transcription_result['text'])
+                
+                # Write SRT file
+                with open(srt_path, 'w', encoding='utf-8') as f:
+                    f.write(transcription_result['srt'])
+                
+                # Write VTT file
+                with open(vtt_path, 'w', encoding='utf-8') as f:
+                    f.write(transcription_result['vtt'])
+                
+                # Clean up temporary audio file
+                try:
+                    if os.path.exists(audio_file):
+                        os.remove(audio_file)
+                    if os.path.exists(temp_dir):
+                        os.rmdir(temp_dir)
+                except:
+                    pass  # Don't fail if cleanup fails
+                
+                # Update completed count
+                job_statuses[job_id]['completed_videos'] = i + 1
+                logger.info(f"Completed transcription for: {video['title']}")
+                
+            except Exception as video_error:
+                logger.error(f"Error processing video {video['title']}: {video_error}")
+                # Continue with next video instead of failing entire playlist
+                continue
+        
+        # Update status to complete
+        job_statuses[job_id]['status'] = 'complete'
+        job_statuses[job_id]['percent'] = 100
+        
+        completed_count = job_statuses[job_id]['completed_videos']
+        logger.info(f"Completed playlist transcription for job {job_id}: {completed_count}/{len(videos)} videos")
+        
+    except Exception as e:
+        logger.error(f"Error in playlist transcription job {job_id}: {e}")
+        job_statuses[job_id]['status'] = 'error'
+        job_statuses[job_id]['error'] = str(e)
+        job_statuses[job_id]['percent'] = 100
 
 # Mock transcription function (replace with actual implementation)
 def real_transcribe_audio(job_id, url, mode, lang, video_id):
@@ -199,6 +322,48 @@ def transcribe():
         if not url:
             return jsonify({'error': 'Missing URL parameter'}), 400
         
+        # Check if this is a playlist URL
+        if is_playlist_url(url):
+            logger.info(f"Detected playlist URL: {url}")
+            
+            # Generate a job ID for playlist
+            job_id = f"playlist_{int(time.time())}_{abs(hash(url)) % 10000}"
+            
+            logger.info(f"Received playlist transcription request: job_id={job_id}, mode={mode}, lang={lang}")
+            
+            # Set initial job status for playlist
+            job_statuses[job_id] = {
+                'status': 'queued',
+                'percent': 0,
+                'error': None,
+                'is_playlist': True,
+                'total_videos': 0,
+                'completed_videos': 0
+            }
+            
+            # Start playlist transcription in background thread
+            thread = threading.Thread(
+                target=real_transcribe_playlist,
+                args=(job_id, url, mode, lang),
+                daemon=True
+            )
+            thread.start()
+            
+            # Return job ID and playlist info
+            response = {
+                'job_id': job_id,
+                'status': 'queued',
+                'is_playlist': True,
+                'message': 'Playlist transcription job started',
+                'download_links': {
+                    'zip': f"/download/{job_id}?format=zip"
+                }
+            }
+            
+            logger.info(f"Returning playlist response: {response}")
+            return jsonify(response)
+        
+        # Handle single video URL
         # Validate YouTube URL format
         import re
         youtube_patterns = [
@@ -292,6 +457,38 @@ def download(job_id):
         if not os.path.exists(job_dir):
             return "Files not found", 404
         
+        # Handle ZIP download for playlists
+        if format == 'zip':
+            import zipfile
+            from io import BytesIO
+            
+            # If we have files but no job status, assume the job was completed
+            if not status:
+                logger.info(f"Playlist job {job_id} status lost but files exist - serving ZIP download")
+            elif status.get('status') != 'complete':
+                return f"Playlist transcription is not ready yet. Status: {status.get('status')}", 202
+            
+            # Create ZIP file in memory
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                # Add all transcription files to the ZIP
+                for filename in os.listdir(job_dir):
+                    if filename.endswith(('.txt', '.srt', '.vtt')):
+                        file_path = os.path.join(job_dir, filename)
+                        zip_file.write(file_path, filename)
+            
+            zip_buffer.seek(0)
+            
+            logger.info(f"Serving ZIP download for playlist job {job_id}")
+            return Response(
+                zip_buffer.getvalue(),
+                mimetype='application/zip',
+                headers={
+                    'Content-Disposition': f'attachment; filename="playlist_transcriptions_{job_id}.zip"'
+                }
+            )
+        
+        # Handle individual file downloads (single videos)
         # Find the file with the requested format
         files = [f for f in os.listdir(job_dir) if f.endswith(f'.{format}')]
         if not files:
