@@ -6,9 +6,15 @@ import json
 import tempfile
 import subprocess
 from openai import OpenAI
+from app.core.config import settings
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+# Initialize OpenAI client using settings configuration
+def get_openai_client():
+    """Get OpenAI client with proper API key handling."""
+    api_key = settings.OPENAI_API_KEY
+    if not api_key:
+        raise ValueError("OpenAI API key not found. Please set OPENAI_API_KEY in your environment variables or .env file")
+    return OpenAI(api_key=api_key)
 
 def transcribe_audio_file(file_path, language=None):
     """
@@ -22,6 +28,9 @@ def transcribe_audio_file(file_path, language=None):
         dict: Transcription in multiple formats (text, srt, vtt)
     """
     try:
+        # Get OpenAI client with proper API key
+        client = get_openai_client()
+        
         # Open the audio file
         with open(file_path, "rb") as audio_file:
             # Call OpenAI's Whisper API
