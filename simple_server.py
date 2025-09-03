@@ -36,7 +36,8 @@ try:
         convert_to_srt, 
         convert_to_vtt,
         extract_playlist_videos,
-        is_playlist_url
+        is_playlist_url,
+        get_proxy_config
     )
     WHISPER_AVAILABLE = True
     logger.info("✅ Standalone Whisper service loaded successfully")
@@ -92,11 +93,17 @@ if not WHISPER_AVAILABLE:
     download_audio_from_youtube = fallback_download_audio_from_youtube
     extract_playlist_videos = fallback_extract_playlist_videos
     is_playlist_url = fallback_is_playlist_url
+    get_proxy_config = lambda: None  # Fallback proxy function
 
 def real_transcribe_playlist(job_id, playlist_url, mode, lang):
     """Transcribe all videos in a YouTube playlist"""
     try:
         logger.info(f"Starting playlist transcription for job {job_id}")
+        
+        # Get proxy configuration
+        proxy = get_proxy_config() if WHISPER_AVAILABLE else None
+        if proxy:
+            logger.info(f"Using proxy: {proxy}")
         
         # Update status to extracting playlist
         job_statuses[job_id]['status'] = 'extracting_playlist'
@@ -104,7 +111,7 @@ def real_transcribe_playlist(job_id, playlist_url, mode, lang):
         
         # Extract videos from playlist
         logger.info(f"Extracting videos from playlist: {playlist_url}")
-        videos = extract_playlist_videos(playlist_url)
+        videos = extract_playlist_videos(playlist_url, proxy)
         
         if not videos:
             raise Exception("No videos found in the playlist or playlist is private/unavailable.")
@@ -131,7 +138,7 @@ def real_transcribe_playlist(job_id, playlist_url, mode, lang):
                 # Download audio for this video
                 logger.info(f"Downloading audio for: {video['title']}")
                 temp_dir = tempfile.mkdtemp(dir='tmp')
-                audio_file = download_audio_from_youtube(video['url'], temp_dir)
+                audio_file = download_audio_from_youtube(video['url'], temp_dir, proxy)
                 
                 if not audio_file:
                     logger.warning(f"Failed to download audio for video: {video['title']}")
@@ -206,6 +213,11 @@ def real_transcribe_audio(job_id, url, mode, lang, video_id):
     try:
         logger.info(f"Starting real transcription for job {job_id}")
         
+        # Get proxy configuration
+        proxy = get_proxy_config() if WHISPER_AVAILABLE else None
+        if proxy:
+            logger.info(f"Using proxy: {proxy}")
+        
         # Update status to downloading
         job_statuses[job_id]['status'] = 'downloading_audio'
         job_statuses[job_id]['percent'] = 10
@@ -213,7 +225,7 @@ def real_transcribe_audio(job_id, url, mode, lang, video_id):
         # Download audio from YouTube
         logger.info(f"Downloading audio for video {video_id} from URL: {url}")
         temp_dir = tempfile.mkdtemp(dir='tmp')
-        audio_file = download_audio_from_youtube(url, temp_dir)
+        audio_file = download_audio_from_youtube(url, temp_dir, proxy)
         
         if not audio_file:
             raise Exception("Failed to download audio from YouTube. The video might be private, restricted, or unavailable.")
