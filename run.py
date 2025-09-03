@@ -6,7 +6,7 @@ import time
 import threading
 import queue
 import tempfile
-import whisper_service
+from app.services import whisper_service
 from datetime import datetime
 
 # Import Flask components

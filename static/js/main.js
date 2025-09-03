@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
         
-        fetch('/api/transcribe', {
+        fetch('/transcribe', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            fetch(`/api/job/${jobId}/status`)
+            fetch(`/job-status/${jobId}`)
                 .then(response => response.json())
                 .then(status => {
                     console.log('Job status:', status);

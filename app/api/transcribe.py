@@ -28,7 +28,7 @@ async def transcribe_video(
     background_tasks: BackgroundTasks,
     cache_service: CacheService = Depends(get_cache_service),
 ):
-    """
+    """ 
     Transcribe a YouTube video.
     
     - **url**: YouTube URL to transcribe
@@ -37,7 +37,8 @@ async def transcribe_video(
     """
     # Extract video ID from URL
     video_id = request.url.split("v=")[-1].split("&")[0] if "v=" in request.url else request.url.split("youtu.be/")[-1].split("?")[0]
-    
+    logger.info(f"Received transcription request for video {video_id} with mode {request.mode} and lang {request.lang}")
+
     # Create a cache key based on the video ID, mode, and language
     cache_key = f"transcription:{video_id}:{request.mode}:{request.lang}"
     
@@ -86,7 +87,7 @@ async def transcribe_video(
         video_id,
         cache_key
     )
-    
+    logger.info(f"Started background task for job {job_id} for video {video_id}")
     # Return response with job ID
     return TranscriptionResponse(
         job_id=job_id,
@@ -185,6 +186,7 @@ async def process_transcription(
                 transcription = whisper_service.transcribe_audio_file(audio_path, request.lang)
                 if not transcription:
                     raise Exception("Failed to transcribe audio with Whisper")
+                logger.info(f"Successfully transcribed audio for video {video_id}")
         
         # If still no transcription, fail
         if not transcription:
@@ -210,6 +212,7 @@ async def process_transcription(
         })
         
         logger.info(f"Transcription completed successfully for video {video_id}")
+        logger.info(f"Files saved: {files}")
             
     except Exception as e:
         logger.error(f"Error processing transcription: {e}")

@@ -1,5 +1,5 @@
 """
-WebSocket API for real-time progress updates.
+WebSocket API for real-time progress updates. 
 
 This module handles the WebSocket connections for providing real-time
 progress updates for transcription jobs.
