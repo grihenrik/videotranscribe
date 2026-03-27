@@ -46,6 +46,16 @@ except Exception as e:
     logger.info("🔄 Falling back to mock transcription")
     WHISPER_AVAILABLE = False
 
+# Try to import the advanced proxy manager
+try:
+    from proxy_manager import get_proxy_manager
+    PROXY_MANAGER_AVAILABLE = True
+    logger.info("✅ Advanced proxy manager loaded successfully")
+except Exception as e:
+    logger.error(f"❌ Failed to load proxy manager: {e}")
+    logger.info("🔄 Using basic proxy configuration")
+    PROXY_MANAGER_AVAILABLE = False
+
 # Create Flask app
 app = Flask(__name__, 
             static_folder='static',
@@ -100,8 +110,21 @@ def real_transcribe_playlist(job_id, playlist_url, mode, lang):
     try:
         logger.info(f"Starting playlist transcription for job {job_id}")
         
-        # Get proxy configuration
-        proxy = get_proxy_config() if WHISPER_AVAILABLE else None
+        # Create worker ID for sticky session (playlist jobs get consistent worker ID)
+        worker_id = f"playlist_{job_id}"
+        
+        # Get proxy manager or fallback to basic proxy
+        if PROXY_MANAGER_AVAILABLE:
+            proxy_manager = get_proxy_manager()
+            # Get sticky session for this worker
+            session = proxy_manager.get_worker_session(worker_id)
+            proxy = session.proxy_url
+            logger.info(f"✅ Using sticky session for worker {worker_id} (proxy: {proxy[:50] if proxy else 'None'}...)")
+        else:
+            proxy = get_proxy_config() if WHISPER_AVAILABLE else None
+            proxy_manager = None
+            logger.info("Using basic proxy configuration")
+        
         if proxy:
             logger.info(f"Using proxy: {proxy}")
         
@@ -109,9 +132,15 @@ def real_transcribe_playlist(job_id, playlist_url, mode, lang):
         job_statuses[job_id]['status'] = 'extracting_playlist'
         job_statuses[job_id]['percent'] = 5
         
-        # Extract videos from playlist
+        # Extract videos from playlist (with throttling if available)
         logger.info(f"Extracting videos from playlist: {playlist_url}")
+        if proxy_manager:
+            proxy_manager.pre_request_hook(worker_id)
+        
         videos = extract_playlist_videos(playlist_url, proxy)
+        
+        if proxy_manager:
+            proxy_manager.post_request_hook(worker_id, success=(videos is not None and len(videos) > 0))
         
         if not videos:
             raise Exception("No videos found in the playlist or playlist is private/unavailable.")
@@ -135,21 +164,72 @@ def real_transcribe_playlist(job_id, playlist_url, mode, lang):
                 job_statuses[job_id]['percent'] = base_progress
                 job_statuses[job_id]['current_video'] = video['title']
                 
-                # Download audio for this video
-                logger.info(f"Downloading audio for: {video['title']}")
-                temp_dir = tempfile.mkdtemp(dir='tmp')
-                audio_file = download_audio_from_youtube(video['url'], temp_dir, proxy)
+                video_id = video.get('id')
+                transcription_result = None
                 
-                if not audio_file:
-                    logger.warning(f"Failed to download audio for video: {video['title']}")
-                    continue
+                # Try optimized transcription with proxy manager (using same worker ID for sticky session)
+                if proxy_manager and video_id:
+                    logger.info(f"Using optimized transcription for {video['title']} (sticky session: {worker_id})")
+                    transcription_result = proxy_manager.get_optimized_transcription(
+                        video_id=video_id,
+                        mode=mode,
+                        language=lang if lang != 'auto' else 'en',
+                        worker_id=worker_id  # Use same worker ID for sticky session
+                    )
                 
-                # Update progress
-                job_statuses[job_id]['percent'] = base_progress + 20
-                
-                # Transcribe using Whisper
-                logger.info(f"Transcribing: {video['title']}")
-                transcription_result = transcribe_audio_file(audio_file, lang if lang != 'auto' else None)
+                # Fallback to traditional audio download + Whisper
+                if not transcription_result:
+                    logger.info(f"Using traditional audio download for: {video['title']}")
+                    
+                    # Throttle request using worker ID for sticky session
+                    if proxy_manager:
+                        proxy_manager.pre_request_hook(worker_id)
+                    
+                    # Download audio for this video
+                    temp_dir = tempfile.mkdtemp(dir='tmp')
+                    
+                    # Use sticky session proxy if available
+                    download_proxy = proxy
+                    if proxy_manager:
+                        session = proxy_manager.get_worker_session(worker_id)
+                        download_proxy = session.proxy_url
+                    
+                    audio_file = download_audio_from_youtube(video['url'], temp_dir, download_proxy)
+                    
+                    # Record request result using worker ID
+                    if proxy_manager:
+                        proxy_manager.post_request_hook(worker_id, success=(audio_file is not None))
+                    
+                    if not audio_file:
+                        logger.warning(f"Failed to download audio for video: {video['title']}")
+                        continue
+                    
+                    # Update progress
+                    job_statuses[job_id]['percent'] = base_progress + 20
+                    
+                    # Transcribe using Whisper
+                    logger.info(f"Transcribing: {video['title']}")
+                    transcription_result = transcribe_audio_file(audio_file, lang if lang != 'auto' else None)
+                    
+                    # Cache result if we have proxy manager
+                    if proxy_manager and transcription_result and video_id:
+                        proxy_manager.cache.cache_video(
+                            video_id=video_id,
+                            etag="audio_whisper",
+                            title=video['title'],
+                            transcription_text=transcription_result['text'],
+                            transcription_srt=transcription_result['srt'],
+                            transcription_vtt=transcription_result['vtt']
+                        )
+                    
+                    # Clean up temporary audio file
+                    try:
+                        if os.path.exists(audio_file):
+                            os.remove(audio_file)
+                        if os.path.exists(temp_dir):
+                            os.rmdir(temp_dir)
+                    except:
+                        pass  # Don't fail if cleanup fails
                 
                 if not transcription_result:
                     logger.warning(f"Failed to transcribe video: {video['title']}")
@@ -207,50 +287,110 @@ def real_transcribe_playlist(job_id, playlist_url, mode, lang):
         job_statuses[job_id]['error'] = str(e)
         job_statuses[job_id]['percent'] = 100
 
-# Mock transcription function (replace with actual implementation)
+# Real transcription function using optimized proxy manager with sticky sessions
 def real_transcribe_audio(job_id, url, mode, lang, video_id):
-    """Real transcription function using Whisper and yt-dlp"""
+    """Real transcription function using Whisper and yt-dlp with optimized proxy handling and sticky sessions"""
     try:
         logger.info(f"Starting real transcription for job {job_id}")
         
-        # Get proxy configuration
-        proxy = get_proxy_config() if WHISPER_AVAILABLE else None
+        # Create worker ID for sticky session (single jobs get unique worker ID based on job_id)
+        worker_id = f"single_{job_id}"
+        
+        # Get proxy manager or fallback to basic proxy
+        if PROXY_MANAGER_AVAILABLE:
+            proxy_manager = get_proxy_manager()
+            # Get sticky session for this worker
+            session = proxy_manager.get_worker_session(worker_id)
+            proxy = session.proxy_url
+            logger.info(f"✅ Using sticky session for worker {worker_id} (proxy: {proxy[:50] if proxy else 'None'}...)")
+        else:
+            proxy = get_proxy_config() if WHISPER_AVAILABLE else None
+            proxy_manager = None
+            logger.info("Using basic proxy configuration")
+        
         if proxy:
             logger.info(f"Using proxy: {proxy}")
         
-        # Update status to downloading
-        job_statuses[job_id]['status'] = 'downloading_audio'
-        job_statuses[job_id]['percent'] = 10
+        # Update status to starting
+        job_statuses[job_id]['status'] = 'starting_transcription'
+        job_statuses[job_id]['percent'] = 5
         
-        # Download audio from YouTube
-        logger.info(f"Downloading audio for video {video_id} from URL: {url}")
-        temp_dir = tempfile.mkdtemp(dir='tmp')
-        audio_file = download_audio_from_youtube(url, temp_dir, proxy)
-        
-        if not audio_file:
-            raise Exception("Failed to download audio from YouTube. The video might be private, restricted, or unavailable.")
-        
-        logger.info(f"Audio downloaded successfully: {audio_file}")
-        
-        # Update status to transcribing
-        job_statuses[job_id]['status'] = 'transcribing_audio'
-        job_statuses[job_id]['percent'] = 40
-        
-        # Transcribe using Whisper
-        logger.info(f"Transcribing audio with Whisper (mode: {mode}, language: {lang})")
-        
-        # Check if we should use captions first (for auto mode)
         transcription_result = None
         
-        if mode in ['auto', 'captions']:
-            # Try to get captions first (this is a placeholder - you could implement caption extraction)
-            logger.info("Attempting to extract captions...")
-            # For now, we'll skip to Whisper
+        # Try optimized transcription with proxy manager (captions first, then audio)
+        if proxy_manager and video_id:
+            logger.info(f"Using optimized transcription for video {video_id} (sticky session: {worker_id})")
+            transcription_result = proxy_manager.get_optimized_transcription(
+                video_id=video_id,
+                mode=mode,
+                language=lang if lang != 'auto' else 'en',
+                worker_id=worker_id  # Use worker ID for sticky session
+            )
             
-        if not transcription_result and mode in ['auto', 'whisper']:
-            # Use Whisper for transcription
-            logger.info("Using Whisper for transcription...")
+            if transcription_result:
+                job_statuses[job_id]['status'] = 'transcription_complete_captions'
+                job_statuses[job_id]['percent'] = 70
+                logger.info(f"✅ Transcription completed using captions API (saved ~90% bandwidth)")
+        
+        # Fallback to traditional audio download + Whisper
+        if not transcription_result:
+            logger.info(f"Using traditional audio download + Whisper for video {video_id}")
+            
+            # Update status to downloading
+            job_statuses[job_id]['status'] = 'downloading_audio'
+            job_statuses[job_id]['percent'] = 10
+            
+            # Throttle request using worker ID for sticky session
+            if proxy_manager:
+                proxy_manager.pre_request_hook(worker_id)
+            
+            # Download audio from YouTube
+            logger.info(f"Downloading audio for video {video_id} from URL: {url}")
+            temp_dir = tempfile.mkdtemp(dir='tmp')
+            
+            # Use sticky session proxy if available
+            download_proxy = proxy
+            if proxy_manager:
+                session = proxy_manager.get_worker_session(worker_id)
+                download_proxy = session.proxy_url
+            
+            audio_file = download_audio_from_youtube(url, temp_dir, download_proxy)
+            
+            # Record request result using worker ID
+            if proxy_manager:
+                proxy_manager.post_request_hook(worker_id, success=(audio_file is not None))
+            
+            if not audio_file:
+                raise Exception("Failed to download audio from YouTube. The video might be private, restricted, or unavailable.")
+            
+            logger.info(f"Audio downloaded successfully: {audio_file}")
+            
+            # Update status to transcribing
+            job_statuses[job_id]['status'] = 'transcribing_audio'
+            job_statuses[job_id]['percent'] = 40
+            
+            # Transcribe using Whisper
+            logger.info(f"Transcribing audio with Whisper (mode: {mode}, language: {lang})")
             transcription_result = transcribe_audio_file(audio_file, lang if lang != 'auto' else None)
+            
+            # Cache result if we have proxy manager
+            if proxy_manager and transcription_result and video_id:
+                proxy_manager.cache.cache_video(
+                    video_id=video_id,
+                    etag="audio_whisper",
+                    transcription_text=transcription_result['text'],
+                    transcription_srt=transcription_result['srt'],
+                    transcription_vtt=transcription_result['vtt']
+                )
+            
+            # Clean up temporary audio file
+            try:
+                if os.path.exists(audio_file):
+                    os.remove(audio_file)
+                if os.path.exists(temp_dir):
+                    os.rmdir(temp_dir)
+            except:
+                pass  # Don't fail if cleanup fails
         
         if not transcription_result:
             raise Exception("Failed to transcribe audio. Please check your OpenAI API key and try again.")
@@ -301,6 +441,91 @@ def real_transcribe_audio(job_id, url, mode, lang, video_id):
         job_statuses[job_id]['error'] = str(e)
         job_statuses[job_id]['percent'] = 100
 
+def real_transcribe_file(job_id, file, language, custom_name):
+    """Real file transcription function using Whisper directly"""
+    try:
+        logger.info(f"Starting file transcription for job {job_id}")
+        
+        # Update status to processing
+        job_statuses[job_id]['status'] = 'processing_file'
+        job_statuses[job_id]['percent'] = 10
+        
+        # Create save directory
+        save_dir = os.path.join('tmp', job_id)
+        os.makedirs(save_dir, exist_ok=True)
+        
+        # Save uploaded file temporarily
+        temp_dir = tempfile.mkdtemp(dir='tmp')
+        original_filename = file.filename
+        file_ext = os.path.splitext(original_filename)[1].lower()
+        temp_file_path = os.path.join(temp_dir, f"upload{file_ext}")
+        
+        logger.info(f"Saving uploaded file: {original_filename}")
+        file.save(temp_file_path)
+        
+        # Update progress
+        job_statuses[job_id]['percent'] = 30
+        job_statuses[job_id]['status'] = 'transcribing_file'
+        
+        # Transcribe using Whisper directly on the file
+        logger.info(f"Transcribing file with Whisper")
+        transcription_result = transcribe_audio_file(
+            temp_file_path, 
+            language if language != 'auto' else None
+        )
+        
+        if not transcription_result:
+            raise Exception("Failed to transcribe the uploaded file.")
+        
+        logger.info(f"File transcription completed successfully")
+        
+        # Update progress
+        job_statuses[job_id]['percent'] = 80
+        job_statuses[job_id]['status'] = 'saving_results'
+        
+        # Save files with custom name or original filename
+        base_name = custom_name if custom_name else os.path.splitext(original_filename)[0]
+        # Clean base name for safe filename
+        import re
+        base_name = re.sub(r'[<>:"/\\|?*]', '_', base_name)
+        base_name = base_name.strip()
+        
+        # Save transcription files
+        txt_path = os.path.join(save_dir, f"{base_name}.txt")
+        srt_path = os.path.join(save_dir, f"{base_name}.srt")
+        vtt_path = os.path.join(save_dir, f"{base_name}.vtt")
+        
+        with open(txt_path, 'w', encoding='utf-8') as f:
+            f.write(transcription_result['text'])
+        
+        with open(srt_path, 'w', encoding='utf-8') as f:
+            f.write(transcription_result['srt'])
+        
+        with open(vtt_path, 'w', encoding='utf-8') as f:
+            f.write(transcription_result['vtt'])
+        
+        # Clean up temporary file
+        try:
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+            if os.path.exists(temp_dir):
+                os.rmdir(temp_dir)
+        except:
+            pass  # Don't fail if cleanup fails
+        
+        # Update status to complete
+        job_statuses[job_id]['status'] = 'complete'
+        job_statuses[job_id]['percent'] = 100
+        job_statuses[job_id]['transcription_file'] = base_name
+        
+        logger.info(f"Completed file transcription for job {job_id}")
+        
+    except Exception as e:
+        logger.error(f"Error in file transcription job {job_id}: {e}")
+        job_statuses[job_id]['status'] = 'error'
+        job_statuses[job_id]['error'] = str(e)
+        job_statuses[job_id]['percent'] = 100
+
 # === Routes ===
 
 @app.route('/')
@@ -308,10 +533,9 @@ def index():
     """Serve the main page"""
     return send_from_directory('static', 'index.html')
 
-@app.route('/<path:filename>')
-def static_files(filename):
-    """Serve static files"""
-    return send_from_directory('static', filename)
+# API routes must be defined BEFORE the catch-all static files route,
+# otherwise /upload-transcribe, /transcribe, etc. get matched as static file paths
+# and return 405 Method Not Allowed for POST requests.
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
@@ -434,6 +658,85 @@ def transcribe():
         logger.error(f"Error in transcribe endpoint: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/upload-transcribe', methods=['POST'])
+def upload_transcribe():
+    """Upload and transcribe audio/video file"""
+    try:
+        logger.info("File upload transcription request received")
+        
+        # Check if file was uploaded
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file uploaded'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        # Get additional parameters
+        language = request.form.get('language', 'auto')
+        custom_name = request.form.get('custom_name', '')
+        
+        # Validate file size (200MB limit)
+        file.seek(0, 2)  # Seek to end
+        file_size = file.tell()
+        file.seek(0)  # Reset to beginning
+        
+        max_size = 200 * 1024 * 1024  # 200MB
+        if file_size > max_size:
+            return jsonify({'error': 'File too large. Maximum size is 200MB.'}), 400
+        
+        # Validate file type
+        allowed_extensions = {
+            '.mp3', '.mp4', '.wav', '.m4a', '.flac', '.aac', '.ogg', 
+            '.webm', '.mov', '.avi', '.mkv', '.wma', '.3gp', '.amr'
+        }
+        
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in allowed_extensions:
+            return jsonify({'error': f'Unsupported file type: {file_ext}'}), 400
+        
+        # Generate job ID
+        job_id = f"file_{int(time.time())}_{uuid.uuid4().hex[:4]}"
+        
+        logger.info(f"Processing file upload: {file.filename} (size: {file_size}, job: {job_id})")
+        
+        # Initialize job status
+        job_statuses[job_id] = {
+            'status': 'uploading',
+            'percent': 0,
+            'video_id': custom_name or os.path.splitext(file.filename)[0],
+            'is_playlist': False,
+            'file_upload': True,
+            'original_filename': file.filename,
+            'file_size': file_size
+        }
+        
+        # Start transcription in background thread
+        thread = threading.Thread(
+            target=real_transcribe_file,
+            args=(job_id, file, language, custom_name)
+        )
+        thread.daemon = True
+        thread.start()
+        
+        # Return immediate response
+        response = {
+            'job_id': job_id,
+            'status': 'queued',
+            'is_playlist': False,
+            'file_upload': True,
+            'message': 'File upload transcription job started',
+            'original_filename': file.filename,
+            'file_size': file_size
+        }
+        
+        logger.info(f"File upload job started: {job_id}")
+        return jsonify(response)
+        
+    except Exception as e:
+        logger.error(f"Error in upload-transcribe endpoint: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/job-status/<job_id>')
 def job_status(job_id):
     """Get job status"""
@@ -535,6 +838,11 @@ def download(job_id):
     except Exception as e:
         logger.error(f"Error in download endpoint for job {job_id}: {e}")
         return f"Error: {e}", 500
+
+@app.route('/<path:filename>')
+def static_files(filename):
+    """Serve static files (must be last - catch-all for non-API paths)"""
+    return send_from_directory('static', filename)
 
 if __name__ == "__main__":
     logger.info("Starting simple YouTube transcription server...")

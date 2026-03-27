@@ -10,14 +10,17 @@
 <body>
     <div class="container py-5"> 
         <header class="text-center mb-5">
-            <h1 class="display-4 mb-3">YouTube Transcription Tool</h1>
-            <p class="lead">Extract text from YouTube videos using captions or speech recognition</p>
+            <h1 class="display-4 mb-3">Video & Audio Transcription Tool</h1>
+            <p class="lead">Extract text from YouTube videos or upload your own audio/video files</p>
             
             <!-- Navigation Tabs -->
             <div class="d-flex justify-content-center mb-4">
                 <ul class="nav nav-pills">
                     <li class="nav-item">
                         <a class="nav-link active" id="single-tab" href="#single" data-bs-toggle="pill">Single Video</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="file-upload-tab" href="#file-upload" data-bs-toggle="pill">File Upload</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" id="batch-tab" href="#batch" data-bs-toggle="pill">Batch Processing</a>
@@ -74,6 +77,76 @@
                                     <div class="d-grid">
                                         <button type="submit" class="btn btn-primary btn-lg" id="transcribeBtn">
                                             Transcribe Video
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Upload Tab -->
+                    <div class="tab-pane fade" id="file-upload" role="tabpanel">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h2 class="h5 mb-0">Upload Audio/Video File</h2>
+                            </div>
+                            <div class="card-body">
+                                <form id="fileUploadForm" enctype="multipart/form-data">
+                                    <div class="mb-3">
+                                        <label for="audioFile" class="form-label">Select Audio/Video File</label>
+                                        <input type="file" class="form-control" id="audioFile" accept="audio/*,video/*,.mp3,.mp4,.wav,.m4a,.flac,.aac,.ogg,.webm,.mov,.avi,.mkv" required>
+                                        <div class="form-text">
+                                            Supported formats: MP3, MP4, WAV, M4A, FLAC, AAC, OGG, WebM, MOV, AVI, MKV<br>
+                                            Maximum file size: 200MB
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="fileLanguage" class="form-label">Language</label>
+                                            <select class="form-select" id="fileLanguage">
+                                                <option value="auto" selected>Auto-detect</option>
+                                                <option value="en">English</option>
+                                                <option value="es">Spanish</option>
+                                                <option value="fr">French</option>
+                                                <option value="de">German</option>
+                                                <option value="it">Italian</option>
+                                                <option value="pt">Portuguese</option>
+                                                <option value="ru">Russian</option>
+                                                <option value="ja">Japanese</option>
+                                                <option value="zh">Chinese</option>
+                                                <option value="ko">Korean</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="fileName" class="form-label">File Name (optional)</label>
+                                            <input type="text" class="form-control" id="fileName" placeholder="Custom name for transcription">
+                                            <div class="form-text">Leave empty to use original filename</div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="file-preview d-none" id="filePreview">
+                                            <h6>File Preview:</h6>
+                                            <div class="card bg-light">
+                                                <div class="card-body py-2">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <strong id="previewFileName">-</strong><br>
+                                                            <small class="text-muted">
+                                                                Size: <span id="previewFileSize">-</span> | 
+                                                                Duration: <span id="previewDuration">Calculating...</span>
+                                                            </small>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <span class="badge bg-success" id="previewFileType">-</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-success btn-lg" id="uploadBtn">
+                                            <i class="fas fa-upload"></i> Upload & Transcribe
                                         </button>
                                     </div>
                                 </form>

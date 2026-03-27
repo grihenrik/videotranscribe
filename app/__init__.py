@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.transcribe import router as transcribe_router
 from app.api.download import router as download_router
 from app.api.progress_ws import router as websocket_router
+from app.api.upload_legacy import router as upload_legacy_router
 from app.core.logging import setup_logging
 
 def create_app() -> FastAPI:
@@ -33,8 +34,10 @@ def create_app() -> FastAPI:
     app.include_router(transcribe_router, prefix="/api", tags=["transcription"])
     app.include_router(download_router, prefix="/api", tags=["download"])
     app.include_router(websocket_router, prefix="/api", tags=["websocket"])
+    # Legacy routes for static frontend (must be before static mount)
+    app.include_router(upload_legacy_router, tags=["legacy"])
 
-    # Mount static files
+    # Mount static files (catch-all, must be last)
     app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
     return app

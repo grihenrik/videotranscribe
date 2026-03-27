@@ -3,6 +3,7 @@ Logging configuration for the application.
 """
 
 import logging
+import os
 from typing import Dict, Any, Optional
 
 def setup_logging(level: str = "INFO") -> None:
@@ -23,12 +24,29 @@ def setup_logging(level: str = "INFO") -> None:
     
     numeric_level = level_map.get(level.upper(), logging.INFO)
     
-    # Configure root logger
+    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    date_format = "%Y-%m-%d %H:%M:%S"
+    
+    # Configure root logger with console output
     logging.basicConfig(
         level=numeric_level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
+        format=log_format,
+        datefmt=date_format,
     )
+    
+    # Add file handler for transcription errors (logs/transcription.log)
+    try:
+        log_dir = os.path.join(os.getcwd(), "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        file_handler = logging.FileHandler(
+            os.path.join(log_dir, "transcription.log"),
+            encoding="utf-8",
+        )
+        file_handler.setLevel(logging.WARNING)
+        file_handler.setFormatter(logging.Formatter(log_format, datefmt=date_format))
+        logging.getLogger().addHandler(file_handler)
+    except OSError:
+        pass  # Skip file logging if we can't write (e.g. read-only filesystem)
 
 class LoggerAdapter(logging.LoggerAdapter):
     """

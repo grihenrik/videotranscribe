@@ -81,6 +81,39 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // File upload form handlers
+    const fileUploadForm = document.getElementById('fileUploadForm');
+    const uploadButton = document.getElementById('uploadBtn');
+    const fileInput = document.getElementById('audioFile');
+    
+    if (fileUploadForm && uploadButton && fileInput) {
+        // File preview functionality
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                showFilePreview(file);
+            } else {
+                hideFilePreview();
+            }
+        });
+        
+        fileUploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('File upload form submission intercepted');
+            handleFileUpload();
+            return false;
+        });
+        
+        uploadButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('File upload button click intercepted');
+            handleFileUpload();
+            return false;
+        });
+    }
+    
     function handleSubmission() {
         console.log('Processing transcription request...');
         
@@ -256,6 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     btn.classList.add('disabled');
                     btn.style.pointerEvents = 'none';
                     btn.style.opacity = '0.5';
+                    btn.href = '#';  // Reset until enabled
                 }
             });
             
@@ -264,28 +298,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (zipBtn) {
                 zipBtn.style.display = 'none';
             }
-            
-            // Set up click handlers for individual format downloads
-            if (txtBtn && downloadLinks?.txt) {
-                txtBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    downloadFile(downloadLinks.txt, `transcription-${jobId}.txt`);
-                });
-            }
-            
-            if (srtBtn && downloadLinks?.srt) {
-                srtBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    downloadFile(downloadLinks.srt, `transcription-${jobId}.srt`);
-                });
-            }
-            
-            if (vttBtn && downloadLinks?.vtt) {
-                vttBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    downloadFile(downloadLinks.vtt, `transcription-${jobId}.vtt`);
-                });
-            }
+            // href will be set when enableDownloadButtons(jobId) is called on completion
         }
     }
     
@@ -371,7 +384,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         activePollingInterval = null;
                         isPolling = false;
                         
-                        enableDownloadButtons();
+                        enableDownloadButtons(jobId);
                         
                         if (statusBadge) {
                             statusBadge.textContent = 'Completed';
@@ -437,11 +450,27 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Playlist processing placeholder');
     }
     
-    function enableDownloadButtons() {
+    function enableDownloadButtons(jobId) {
         const txtBtn = document.getElementById('download-txt');
         const srtBtn = document.getElementById('download-srt');
         const vttBtn = document.getElementById('download-vtt');
         const zipBtn = document.getElementById('download-zip');
+        
+        // Set href for direct download (more reliable than fetch)
+        if (jobId) {
+            if (txtBtn) {
+                txtBtn.href = `/download/${jobId}?format=txt`;
+                txtBtn.download = `transcription-${jobId}.txt`;
+            }
+            if (srtBtn) {
+                srtBtn.href = `/download/${jobId}?format=srt`;
+                srtBtn.download = `transcription-${jobId}.srt`;
+            }
+            if (vttBtn) {
+                vttBtn.href = `/download/${jobId}?format=vtt`;
+                vttBtn.download = `transcription-${jobId}.vtt`;
+            }
+        }
         
         // Enable all visible buttons
         [txtBtn, srtBtn, vttBtn, zipBtn].forEach(btn => {
@@ -452,6 +481,152 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // File upload functions
+    function showFilePreview(file) {
+        const preview = document.getElementById('filePreview');
+        const fileName = document.getElementById('previewFileName');
+        const fileSize = document.getElementById('previewFileSize');
+        const fileType = document.getElementById('previewFileType');
+        const duration = document.getElementById('previewDuration');
+        
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        fileType.textContent = file.type || 'Unknown';
+        
+        // Try to get duration for audio/video files
+        if (file.type.startsWith('audio/') || file.type.startsWith('video/')) {
+            const url = URL.createObjectURL(file);
+            const media = file.type.startsWith('video/') ? document.createElement('video') : document.createElement('audio');
+            
+            media.addEventListener('loadedmetadata', function() {
+                duration.textContent = formatDuration(media.duration);
+                URL.revokeObjectURL(url);
+            });
+            
+            media.addEventListener('error', function() {
+                duration.textContent = 'Unable to determine';
+                URL.revokeObjectURL(url);
+            });
+            
+            media.src = url;
+        } else {
+            duration.textContent = 'N/A';
+        }
+        
+        preview.classList.remove('d-none');
+    }
+    
+    function hideFilePreview() {
+        const preview = document.getElementById('filePreview');
+        preview.classList.add('d-none');
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function formatDuration(seconds) {
+        if (isNaN(seconds)) return 'Unknown';
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        } else {
+            return `${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
+    }
+    
+    function handleFileUpload() {
+        console.log('Processing file upload...');
+        
+        const fileInput = document.getElementById('audioFile');
+        const languageSelect = document.getElementById('fileLanguage');
+        const fileNameInput = document.getElementById('fileName');
+        const uploadBtn = document.getElementById('uploadBtn');
+        
+        const file = fileInput.files[0];
+        const language = languageSelect.value;
+        const customName = fileNameInput.value.trim();
+        
+        console.log('File upload data:', { 
+            fileName: file?.name, 
+            fileSize: file?.size, 
+            language, 
+            customName 
+        });
+        
+        // Validate
+        if (!file) {
+            alert('Please select a file to upload');
+            return;
+        }
+        
+        // Check file size (200MB limit)
+        const maxSize = 200 * 1024 * 1024; // 200MB in bytes
+        if (file.size > maxSize) {
+            alert('File size too large. Maximum allowed size is 200MB.');
+            return;
+        }
+        
+        // Disable form
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        fileInput.disabled = true;
+        languageSelect.disabled = true;
+        fileNameInput.disabled = true;
+        
+        // Create FormData
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('language', language);
+        if (customName) {
+            formData.append('custom_name', customName);
+        }
+        
+        // Submit to API
+        fetch('/upload-transcribe', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            console.log('Upload response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Upload API Response:', data);
+            
+            if (data.job_id) {
+                showSuccess(data);
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Upload error:', error);
+            if (typeof showError === 'function') {
+                showError('Upload failed: ' + error.message);
+            } else {
+                alert('Upload failed: ' + error.message);
+            }
+            
+            // Re-enable form
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload & Transcribe';
+            fileInput.disabled = false;
+            languageSelect.disabled = false;
+            fileNameInput.disabled = false;
+        });
+    }
 });
 
-console.log('JavaScript file loaded completely (v2025090203)');
+console.log('JavaScript file loaded completely (v2025090204)');
