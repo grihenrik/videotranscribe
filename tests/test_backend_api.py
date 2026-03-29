@@ -14,7 +14,7 @@ from unittest.mock import patch, MagicMock
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from simple_server import app
+from main import app
 from flask import Flask
 import threading
 import subprocess
@@ -112,7 +112,7 @@ class TestSingleVideoTranscription:
             
             status_data = status_response.get_json()
             # Job should be complete or in progress
-            assert status_data['status'] in ['complete', 'queued', 'downloading_audio', 'transcribing_audio', 'saving_files']
+            assert status_data['status'] in ['complete', 'queued', 'downloading_audio', 'transcribing_audio', 'saving_files', 'starting_transcription', 'transcription_complete_captions', 'processing_file', 'transcribing_file', 'saving_results']
     
     def test_single_video_invalid_url(self, client):
         """Test single video transcription with invalid URL"""

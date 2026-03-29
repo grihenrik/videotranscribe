@@ -29,7 +29,7 @@ class TestFrontendIntegration:
         """Start the server for testing"""
         # Start server in background
         self.server_process = subprocess.Popen(
-            ['python', 'simple_server.py'],
+            ['/Users/henrikgripenberg/Development/video/videotranscribe/.venv/bin/python', 'main.py'],
             cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
