@@ -32,10 +32,14 @@ class Settings(BaseSettings):
     WHISPER_MODEL: str = "base"  # tiny, base, small, medium, large
     OPENAI_API_KEY: Optional[str] = None
     USE_OPENAI_WHISPER: bool = True
-    
+    WHISPER_MAX_FILE_SIZE_MB: int = 25  # 25MB limit for Whisper API
+
     # File storage settings
     TEMP_DIR: str = "tmp"
-    
+
+    # File upload settings
+    MAX_FILE_SIZE_MB: int = 1000  # 1GB default for file uploads
+
     # Hardware settings
     USE_GPU: bool = False
     
@@ -49,3 +53,27 @@ class Settings(BaseSettings):
 
 # Create a settings instance
 settings = Settings()
+
+# Create a wrapper class with helper methods
+class ConfigHelper:
+    def __init__(self, settings):
+        self._settings = settings
+
+    @property
+    def MAX_FILE_SIZE_MB(self):
+        return self._settings.MAX_FILE_SIZE_MB
+
+    @property
+    def WHISPER_MAX_FILE_SIZE_MB(self):
+        return self._settings.WHISPER_MAX_FILE_SIZE_MB
+
+    def get_max_file_size_bytes(self) -> int:
+        """Get max file size in bytes."""
+        return self._settings.MAX_FILE_SIZE_MB * 1024 * 1024
+
+    def get_whisper_max_file_size_bytes(self) -> int:
+        """Get Whisper max file size in bytes."""
+        return self._settings.WHISPER_MAX_FILE_SIZE_MB * 1024 * 1024
+
+# Create helper instance
+settings_helper = ConfigHelper(settings)
