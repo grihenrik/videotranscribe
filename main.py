@@ -454,7 +454,7 @@ def validate_file_upload(file):
     file_size = file.tell()
     file.seek(0)
 
-    max_size = 200 * 1024 * 1024
+    max_size = 900 * 1024 * 1024
     if file_size > max_size:
         raise ValueError('File too large. Maximum size is 200MB.')
 
